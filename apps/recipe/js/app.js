@@ -47,8 +47,7 @@
   function playPageEnter(isFirstLoad) {
     var app = document.getElementById('app');
     if (!app) return;
-    // 只在“切换页面”时播放（route 里 prevPath !== path 才会调用）；
-    // 点击展开菜单、页面内局部刷新都不会触发
+    // 只在页面首次加载时播放一次，保证不会“每点一下整页就动一下”
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     app.classList.remove('page-enter');
     void app.offsetHeight;
@@ -57,6 +56,14 @@
     app.__pageEnterTimer = setTimeout(function () {
       app.classList.remove('page-enter');
     }, 700);
+  }
+
+  // 首屏入场动画尚未结束时切换页面，清掉残留类，避免新内容被再次播放
+  function clearPageEnter() {
+    var app = document.getElementById('app');
+    if (!app || !app.classList.contains('page-enter')) return;
+    clearTimeout(app.__pageEnterTimer);
+    app.classList.remove('page-enter');
   }
 
   RM.currentPath = null;
@@ -109,8 +116,12 @@
     }
 
     if (didRender) {
+      // 整页入场动画只在页面首次加载时播放一次。
+      // 点击侧边栏切换路由会重建整个 #app，若每次都重播，左侧常驻栏也会被带着“飞入”，
+      // 形成每次点击都出现一次过度动画的问题；这里切换页面时不再播放。
+      if (isFirstLoad) playPageEnter(true);
+      else if (prevPath !== path) clearPageEnter();
       hasRendered = true;
-      if (prevPath !== path) playPageEnter(isFirstLoad);
     }
   }
 

@@ -135,6 +135,7 @@
           '<div class="auth-logo"><img src="ict.jpg" alt="logo"></div>' + 
           '<h1>小鲨鱼菜谱</h1>' +
           '<p class="auth-sub">圆润 · 简洁 · 清爽的菜谱库</p>' +
+          '<p class="auth-note">账户与密码仅保存在本机浏览器，不会上传到服务器。</p>' +
           '<form id="login-form" novalidate>' +
             '<label class="field"><span>用户名 / UID</span>' +
               '<input type="text" id="login-id" autocomplete="username" placeholder="请输入用户名或 UID"></label>' +
@@ -189,6 +190,7 @@
             '<button type="submit" class="btn btn-primary btn-block">注 册</button>' +
           '</form>' +
           '<div class="auth-foot">已有账户？<a href="#/login">去登录</a></div>' +
+          '<div class="auth-note">密码仅以哈希形式保存在本机浏览器，不会上传到服务器。</div>' +
           '<div class="auth-tip">普通注册需要管理员审批通过后才能登录。</div>' +
         '</div>' +
       '</div>';

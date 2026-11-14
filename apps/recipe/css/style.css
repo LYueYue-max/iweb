@@ -478,3 +478,221 @@ body[data-theme="dark"] .recipe-notes { color: var(--warn); }
   border-radius: inherit;
   display: block;
 }
+
+/* ===== 顶部品牌条 + 底部固定操作栏 ===== */
+:root {
+  --app-topbar-h: 54px;
+}
+
+.shell {
+  grid-template-rows: var(--app-topbar-h) 1fr;
+}
+
+.app-topbar {
+  grid-column: 1 / -1;
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: var(--app-topbar-h);
+  padding: 0 16px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+body[data-theme="dark"] .app-topbar {
+  background: rgba(26, 31, 39, 0.82);
+}
+
+.app-topbar .brand {
+  padding: 0;
+  gap: 8px;
+  font-size: 15px;
+  letter-spacing: -0.2px;
+}
+
+.app-topbar .brand .brand-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+}
+
+.app-topbar .side-search {
+  margin-left: 12px;
+  width: 320px;
+  max-width: 42vw;
+}
+
+.app-topbar .side-search input {
+  height: 34px;
+  font-size: 12px;
+}
+
+.sidebar {
+  top: var(--app-topbar-h);
+  height: calc(100vh - var(--app-topbar-h));
+}
+
+.sidebar-foot {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 70;
+  margin: 0;
+  padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+  flex-direction: row;
+  gap: 6px;
+  border-top: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+body[data-theme="dark"] .sidebar-foot {
+  background: rgba(26, 31, 39, 0.92);
+}
+
+.sidebar-foot .btn {
+  flex: 1 1 0;
+  width: auto;
+  padding: 8px 6px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.main {
+  padding-bottom: 96px;
+}
+
+.auth-note {
+  margin: 10px 0 0;
+  color: #7a8190;
+  font-size: 12px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+body[data-theme="dark"] .auth-note {
+  color: #a8b0c0;
+}
+
+@media (max-width: 900px) {
+  .shell {
+    grid-template-rows: var(--app-topbar-h) auto 1fr;
+  }
+
+  .app-topbar {
+    padding: 0 14px;
+  }
+
+  .app-topbar .side-search {
+    width: 100%;
+    max-width: none;
+  }
+
+  .sidebar {
+    top: var(--app-topbar-h);
+    height: auto;
+  }
+
+  .main {
+    padding-bottom: 96px;
+  }
+
+  .sidebar-foot {
+    padding: 7px 10px calc(7px + env(safe-area-inset-bottom));
+  }
+
+  .sidebar-foot .btn {
+    padding: 7px 4px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 520px) {
+  .app-topbar {
+    gap: 8px;
+    padding: 0 12px;
+  }
+
+  .app-topbar .brand {
+    font-size: 14px;
+  }
+
+  .app-topbar .side-search {
+    flex: 1;
+  }
+
+  .app-topbar .side-search input {
+    height: 32px;
+    font-size: 11px;
+  }
+}
+
+
+/* ===== 管理员顶部两行 + 左下角常驻操作栏 ===== */
+.shell--admin {
+  --app-topbar-h: 96px;
+}
+
+.shell--admin .app-topbar {
+  flex-wrap: wrap;
+  align-content: center;
+  height: var(--app-topbar-h);
+  padding: 6px 16px;
+  gap: 4px;
+}
+
+.shell--admin .app-topbar .brand {
+  width: 100%;
+}
+
+.shell--admin .app-topbar .side-search {
+  width: 100%;
+  max-width: none;
+  margin-left: 0;
+}
+
+.sidebar-foot {
+  left: 0;
+  right: auto;
+  width: 248px;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+}
+
+.sidebar-foot .btn {
+  flex: 0 0 auto;
+  width: 100%;
+}
+
+.sidebar {
+  padding-bottom: 190px;
+}
+
+@media (max-width: 900px) {
+  .shell--admin {
+    --app-topbar-h: 96px;
+  }
+
+  .sidebar-foot {
+    width: 100%;
+    flex-direction: row;
+    padding: 7px 10px calc(7px + env(safe-area-inset-bottom));
+  }
+
+  .sidebar-foot .btn {
+    flex: 1 1 0;
+    width: auto;
+  }
+
+  .sidebar {
+    padding-bottom: 0;
+  }
+}

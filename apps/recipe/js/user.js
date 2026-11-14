@@ -45,10 +45,15 @@
       // 替换为与管理端一致的 shell 布局
       app.innerHTML =
         '<div class="shell">' +
-          '<aside class="sidebar">' +
+          '<header class="app-topbar">' +
             '<div class="brand"><span class="brand-icon"><img src="ict.jpg" alt="logo"></span><span>小鲨鱼菜谱</span></div>' +
+          '</header>' +
+          '<aside class="sidebar">' +
             this.navHtml(path) +
-            '<div class="sidebar-foot">' +
+
+          '</aside>' +
+          '<main class="main" id="main"></main>' +
+          '<div class="sidebar-foot">' +
               '<button type="button" class="btn btn-ghost btn-block" id="notify-btn">🔔 通知中心' +
                 (unread > 0 ? ' <span class="badge badge-danger" style="margin-left:6px">' + unread + '</span>' : '') +
               '</button>' +
@@ -57,8 +62,6 @@
                 (RM.Theme.get() === 'dark' ? '☀️ 浅色模式' : '🌙 深色模式') + '</button>' +
               '<button type="button" class="btn btn-ghost btn-block" id="user-logout">退出登录</button>' +
             '</div>' +
-          '</aside>' +
-          '<main class="main" id="main"></main>' +
         '</div>';
 
       // 绑定侧边栏底部按钮事件
@@ -718,7 +721,7 @@
           '</form>' +
         '</div>' +
         (user.guest ? '<div class="notice notice-warn" style="max-width:560px">游客账户首次登录后 24 小时自动销毁，届时将无法再登录。</div>' : '') +
-        '<div class="notice notice-info" style="max-width:560px">演示站点：所有数据仅保存在当前浏览器中，清空浏览器缓存会恢复初始状态。</div>';
+        '';
 
       var form = main.querySelector('#profile-form');
       var msg = main.querySelector('#profile-msg');
@@ -770,7 +773,7 @@
           '<p class="sub" style="line-height:1.9">' +
             '密码使用 Web Crypto API（SHA-256 + 固定盐）哈希存储，不以明文保存；' +
             '但纯前端版本的数据可被本地访问者查看或修改，不适合真正的多用户生产环境。' +
-            '初始管理员用户名 小鲨鱼，密码写在种子逻辑中，仅作演示用途，请首次登录后立即修改。' +
+            '初始账户信息请查看部署说明；首次登录后请立即修改密码。' +
           '</p>' +
         '</div>' +
         '<div class="card" style="max-width:720px">' +

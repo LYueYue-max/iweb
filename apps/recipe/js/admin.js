@@ -52,15 +52,20 @@
       var unread = RM.Store.unreadCount(user);
 
       app.innerHTML =
-        '<div class="shell">' +
-          '<aside class="sidebar">' +
+        '<div class="shell shell--admin">' +
+          '<header class="app-topbar">' +
             '<div class="brand"><span class="brand-icon"><img src="ict.jpg" alt="logo"></span><span>小鲨鱼菜谱</span></div>' +
             '<div class="side-search">' +
               '<input type="search" id="admin-search" placeholder="搜索用户 / UID / 菜名"' +
                 ' value="' + RM.escapeHtml(RM.adminQuery || '') + '" autocomplete="off">' +
             '</div>' +
+          '</header>' +
+          '<aside class="sidebar">' +
             this.navHtml(path, pendingCount) +
-            '<div class="sidebar-foot">' +
+
+          '</aside>' +
+          '<main class="main" id="main"></main>' +
+          '<div class="sidebar-foot">' +
               '<button type="button" class="btn btn-ghost btn-block" id="notify-btn">🔔 通知中心' +
                 (unread > 0 ? ' <span class="badge badge-danger" style="margin-left:6px">' + unread + '</span>' : '') +
               '</button>' +
@@ -69,8 +74,6 @@
                 (RM.Theme.get() === 'dark' ? '☀️ 浅色模式' : '🌙 深色模式') + '</button>' +
               '<button type="button" class="btn btn-ghost btn-block" id="admin-logout">退出登录</button>' +
             '</div>' +
-          '</aside>' +
-          '<main class="main" id="main"></main>' +
         '</div>';
 
       document.getElementById('admin-logout').addEventListener('click', function () { RM.Auth.logout(); });
@@ -230,7 +233,7 @@
             '官方菜谱库以 JSON 分片形式托管在 <code>data/</code>，按菜系独立加载，单文件远低于 5MB。' +
           '</p>' +
           '<p class="sub" style="line-height:1.9;margin-top:8px">' +
-            '初始管理员：<b>小鲨鱼</b> / <b>xyy1314@</b>' +
+            '初始账户信息请查看部署说明，首次登录后请立即修改密码。' +
           '</p>' +
         '</div>';
     },
@@ -1091,7 +1094,7 @@
           '<input type="file" id="file-import" accept="application/json,.json"></div>' +
         '<div class="card" style="max-width:680px">' +
           '<h3 style="font-size:16px;margin-bottom:8px">重置为初始数据</h3>' +
-          '<p class="sub" style="margin-bottom:14px">清空全部本地数据并恢复种子状态（管理员 小鲨鱼 / xyy1314@）。</p>' +
+          '<p class="sub" style="margin-bottom:14px">清空全部本地数据并恢复初始种子状态。</p>' +
           '<button type="button" class="btn btn-danger" id="btn-reset">重置全部数据</button></div>';
 
       main.querySelector('#btn-export').addEventListener('click', function () {
@@ -1165,7 +1168,7 @@
           '<button type="submit" class="btn btn-primary">保存新密码</button>' +
         '</form>' +
         '<div class="notice notice-info" style="margin-top:20px;max-width:520px">' +
-          '提示：初始管理员为 <b>小鲨鱼</b>，初始密码为 <b>xyy1314@</b>，仅作演示用途。</div>';
+          '密码以哈希形式保存在本机浏览器；请定期更换，不要使用与其他网站相同的密码。</div>';
 
       var form = main.querySelector('#pwd-form');
       var msg = main.querySelector('#pwd-msg');

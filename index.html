@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-device="desktop">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>共创工作室 · 让热爱发光</title>
+  <meta name="description" content="共创工作室整合站：首页、导航、下载、食谱与 Minecraft 专站，一个入口全部直达。" />
+  <meta name="theme-color" content="#fefcf6" />
+  <link rel="icon" type="image/jpeg" href="assets/avatar.png" />
+
+  <!-- 字体：不阻塞渲染，加载失败自动回退系统字体 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,700;0,9..144,900;1,9..144,700&family=Caveat:wght@400;700&family=Noto+Serif+SC:wght@700;900&family=Noto+Sans+SC:wght@400;500;700&family=Fira+Code:wght@400;500&display=swap"
+    media="print"
+    onload="this.media='all'"
+  />
+
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="bg-layer" aria-hidden="true"></div>
+  <a class="skip-link" href="#main">跳到主要内容</a>
+
+  <!-- ===================== 外壳：资源管理器式顶栏 ===================== -->
+  <header class="topbar">
+    <div class="topbar__bar">
+      <div class="win-btns">
+        <button class="icon-btn" type="button" data-act="back" title="后退" aria-label="后退">
+          <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" /></svg>
+        </button>
+        <button class="icon-btn" type="button" data-act="forward" title="前进" aria-label="前进">
+          <svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" /></svg>
+        </button>
+        <button class="icon-btn" type="button" data-act="refresh" title="刷新当前分区" aria-label="刷新当前分区">
+          <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.64-6.36" /><path d="M21 3v6h-6" /></svg>
+        </button>
+      </div>
+
+      <div class="addr">
+        <svg class="addr__folder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+        </svg>
+        <nav class="addr__crumbs" id="crumbs" aria-label="当前位置"></nav>
+        <input class="addr__input" id="siteSearchInput" type="search" placeholder="搜索全站：分区 / 网站 / 游戏 / 下载" autocomplete="off" hidden />
+        <button class="addr__search" id="addrSearch" type="button" data-act="site-search" aria-label="搜索全站" title="搜索全站">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.6-3.6" /></svg>
+        </button>
+        <span class="addr__badge" id="deviceBadge">电脑版</span>
+        <div class="site-search" id="siteSearch" hidden>
+          <div class="site-search__results" id="siteSearchResults"></div>
+        </div>
+      </div>
+
+      <div class="bar-actions">
+        <button class="icon-btn" type="button" data-act="settings" title="设置" aria-label="设置">
+          <svg viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+        </button>
+        <button class="icon-btn only-mobile" type="button" data-act="menu" title="分区菜单" aria-label="分区菜单">
+          <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+        </button>
+      </div>
+    </div>
+
+    <nav class="tabs" id="tabs" aria-label="分区"></nav>
+  </header>
+
+
+  <!-- ===================== 主体 ===================== -->
+  <main id="main">
+
+    <!-- ========== 分区一：首页（原 r2 主界面） ========== -->
+    <section class="view" data-view="home" id="view-home">
+      <div class="hero">
+        <div class="hero__text">
+          <span class="eyebrow">Let your passion shine bright!</span>
+          <h1>让<span class="hl">热爱</span>发光<br />让热爱发亮</h1>
+          <p class="hero__desc">
+            <strong>《共创工作室》</strong><br />
+            专注内容制作、社区运营与游戏运营的三人创意团队，我们服务于个人创作者与公益组织，以资源整合与创意策划为核心，帮助伙伴完善内容与运营体系。
+          </p>
+          <div class="hero__actions">
+            <a class="btn btn--primary" href="#/nav">浏览导航</a>
+            <a class="btn btn--ghost" href="#/minecraft">进入 Minecraft 专站</a>
+          </div>
+        </div>
+        <div class="hero__visual">
+          <div class="cluster">
+            <div class="cluster__ring"></div>
+            <img src="assets/avatar.png" alt="小鲨鱼头像" width="288" height="288" />
+            <span class="cluster__orbit cluster__orbit--a">🎨 自主创作</span>
+            <span class="cluster__orbit cluster__orbit--b">✨ 个人发布</span>
+          </div>
+        </div>
+      </div>
+
+      <section class="section" id="home-logic">
+        <div class="wrap">
+          <div class="flow reveal reveal--d1">
+            <div class="flow__step">
+              <span class="flow__dot">1</span>
+              <h3>内容制作</h3>
+              <p>从选题策划到内容产出，帮助创作者稳定输出有价值的内容。</p>
+            </div>
+            <div class="flow__step">
+              <span class="flow__dot">2</span>
+              <h3>社区运营</h3>
+              <p>搭建、维护并激活用户社区，让互动产生长期价值。</p>
+            </div>
+            <div class="flow__step">
+              <span class="flow__dot">3</span>
+              <h3>游戏运营</h3>
+              <p>提供游戏服务器代理、自建服务器及日常运营管理，打造稳定有趣的游戏体验。</p>
+            </div>
+          </div>
+          <div class="pullquote reveal reveal--d2">
+            <p>不限制创作的自由度让创作者自由发挥</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section--alt" id="home-scenes">
+        <div class="wrap">
+          <div class="scene-grid reveal reveal--d1">
+            <article class="scene">
+              <span class="scene__label">#1</span>
+              <div class="scene__emoji">📖</div>
+              <h3>活动通知</h3>
+              <p>事实时更新活动内容,保证活动流畅无信息差</p>
+            </article>
+            <article class="scene">
+              <span class="scene__label">#2</span>
+              <div class="scene__emoji">🎪</div>
+              <h3>服务器代理 / Landing</h3>
+              <p>只需上传服务器ip即可快速上线</p>
+            </article>
+            <article class="scene">
+              <span class="scene__label">#3</span>
+              <div class="scene__emoji">⚡</div>
+              <h3>Ai功能</h3>
+              <p>Ai代理托管,无需人工自动化管理</p>
+            </article>
+            <article class="scene">
+              <span class="scene__label">#4</span>
+              <div class="scene__emoji">🖼️</div>
+              <h3>minecraft专栏</h3>
+              <p>对minecraft专门优化算法,支持生电,大型整合包等多场景</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="home-workflow">
+        <div class="wrap">
+          <div class="workflow">
+            <div class="workflow__table reveal reveal--d1">
+              <div class="wt-row wt-head">
+                <span>#</span>
+                <span>Action</span>
+                <span>Why</span>
+              </div>
+              <div class="wt-row">
+                <span class="wt-step">1</span>
+                <span class="wt-action">上传文件</span>
+                <span class="wt-why">后台专口上传文件不限速</span>
+              </div>
+              <div class="wt-row">
+                <span class="wt-step">2</span>
+                <span class="wt-action">结果框架</span>
+                <span class="wt-why">运用框架编译解决性能焦虑</span>
+              </div>
+              <div class="wt-row">
+                <span class="wt-step">3</span>
+                <span class="wt-action">使用模板</span>
+                <span class="wt-why">不用熬夜写从半成品开始高效快捷</span>
+              </div>
+              <div class="wt-row">
+                <span class="wt-step">4</span>
+                <span class="wt-action">自定义布局</span>
+                <span class="wt-why">让每个创作者自由开发自由布局</span>
+              </div>
+              <div class="wt-row">
+                <span class="wt-step">5</span>
+                <span class="wt-action">预览文件</span>
+                <span class="wt-why">使用调用浏览器预览不下载文件</span>
+              </div>
+              <div class="wt-row">
+                <span class="wt-step">6</span>
+                <span class="wt-action">mc模组</span>
+                <span class="wt-why">快捷上传一键导入</span>
+              </div>
+              <div class="wt-row">
+                <span class="wt-step">7</span>
+                <span class="wt-action">视频文件</span>
+                <span class="wt-why">浏览器打开就能看</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+    </section>
+
+    <!-- ========== 分区二：导航 ========== -->
+    <section class="view view--nav" data-view="nav" id="view-nav">
+      <div class="section">
+        <div class="wrap">
+          <div class="nav-toolbar">
+            <label class="search">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.6-3.6" /></svg>
+              <input type="search" id="navSearch" placeholder="搜索站点名称或简介…" autocomplete="off" aria-label="搜索导航站点" />
+            </label>
+            <div class="nav-filters" id="navFilters" role="tablist" aria-label="按分类筛选"></div>
+          </div>
+          <div class="nav-meta">
+            <span id="navCount"></span>
+            <span class="nav-device" id="navDevice"></span>
+          </div>
+          <div class="nav-grid" id="navGrid"></div>
+          <p class="empty" id="navEmpty" hidden>没有找到匹配的站点，换个关键词试试。</p>
+          <nav class="nav-pager" id="navPager" aria-label="导航分页"></nav>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 分区三：下载（原 Download-site） ========== -->
+    <section class="view" data-view="download" id="view-download">
+      <div class="section">
+        <div class="wrap">
+
+          <div class="dl-grid">
+            <article class="dl-card">
+              <div class="dl-card__top">
+                <span class="dl-card__tag">高画质</span>
+                <span class="dl-card__icon">✨</span>
+              </div>
+              <h3>AstraLex By LexBooST-1.21</h3>
+              <p class="dl-card__desc">一款非常优质的光影组件不需要前置，玩家可以根据自己需求自定义光影，对电脑配置要求较高，渣机请勿尝试</p>
+              <div class="dl-card__foot">
+                <span class="dl-card__version">适配 1.21.4 及以下版本</span>
+                <a class="btn btn--primary btn--sm" href="https://wwne.lanzoub.com/ioN0L2k6ggub" target="_blank" rel="noopener noreferrer">下载</a>
+              </div>
+            </article>
+
+            <article class="dl-card">
+              <div class="dl-card__top">
+                <span class="dl-card__tag">中画质</span>
+                <span class="dl-card__icon">☁️</span>
+              </div>
+              <h3>Traushe</h3>
+              <p class="dl-card__desc">Traushe是一款在游戏中表现效果较好的光影亮点是天空的云和光照效果，对电脑配置要求一般，不推荐核显电脑使用</p>
+              <div class="dl-card__foot">
+                <span class="dl-card__version">适配 1.20.1 及以下版本</span>
+                <a class="btn btn--primary btn--sm" href="https://wwne.lanzoub.com/ioN0L2k6ggub" target="_blank" rel="noopener noreferrer">下载</a>
+              </div>
+            </article>
+
+            <article class="dl-card">
+              <div class="dl-card__top">
+                <span class="dl-card__tag">低配</span>
+                <span class="dl-card__icon">🍃</span>
+              </div>
+              <h3>MuluG YG</h3>
+              <p class="dl-card__desc">超超超超超级低配光影，表现效果也较好没有自定义功能，对电脑配置要求极低，核显也能流畅游玩</p>
+              <div class="dl-card__foot">
+                <span class="dl-card__version">适配 1.21.4 及以下版本</span>
+                <a class="btn btn--primary btn--sm" href="https://wwne.lanzoub.com/iKhDk2k6g9ze" target="_blank" rel="noopener noreferrer">下载</a>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+    
+
+    </section>
+
+    <!-- ========== 分区四：食谱（原 recipe 独立应用） ========== -->
+    <section class="view" data-view="recipe" id="view-recipe">
+      <div class="app-frame">
+        <div class="app-loading" id="recipeLoading" aria-hidden="true">
+          <span class="app-loading__spinner"></span>
+          <span>正在准备菜谱…</span>
+        </div>
+        <iframe
+          id="recipeFrame"
+          data-src="apps/recipe/index.html"
+          title="小鲨鱼菜谱"
+          loading="lazy"
+          referrerpolicy="no-referrer"
+        ></iframe>
+        <a
+          class="app-fab"
+          href="apps/recipe/index.html"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M14 4h6v6M20 4l-8.5 8.5M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4" />
+          </svg>
+          新窗口打开
+        </a>
+      </div>
+    </section>
+
+    <!-- ========== 分区五：游戏（街机厅） ========== -->
+    <section class="view view--arcade" data-view="game" id="view-game">
+      <div class="arcade-stage">
+        <div class="arcade" id="arcade">
+          <div class="arcade__bar">
+            <span class="arcade__led" id="arcadeLed" aria-hidden="true"></span>
+            <span class="arcade__title" id="arcadeTitle">街机厅</span>
+            <span class="arcade__meta" id="arcadeMeta">按电源键开机</span>
+            <span class="arcade__btns">
+              <button class="arcade__btn only-mobile" type="button" data-act="arcade-exit" title="退出街机">✕ 退出</button>
+              <button class="arcade__btn" type="button" data-act="arcade-lucky" title="随机开一局">🎲 随机</button>
+              <button class="arcade__btn" type="button" data-act="arcade-pause" id="arcadePauseBtn" title="暂停 / 继续" hidden>⏸ 暂停</button>
+              <button class="arcade__btn" type="button" data-act="arcade-back" id="arcadeBackBtn" title="返回大厅" hidden>← 返回</button>
+              <button class="arcade__btn" type="button" data-act="arcade-full" id="arcadeFullBtn" title="全屏游玩">⛶ 全屏</button>
+              <button class="arcade__btn" type="button" data-act="arcade-close" title="关机">⏻ 关机</button>
+            </span>
+          </div>
+
+          <div class="arcade__screen" id="arcadeScreen">
+            <div class="arcade__standby" id="arcadeStandby">
+              <button type="button" class="arcade__power" data-act="arcade-power" aria-label="开机">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.4v8.2" /><path d="M7.1 6.4a7.4 7.4 0 1 0 9.8 0" /></svg>
+              </button>
+              <p class="arcade__standby-title">PRESS POWER</p>
+              <p class="arcade__standby-sub">按电源键开机</p>
+            </div>
+
+            <div class="arcade__boot" id="arcadeBoot" aria-hidden="true" hidden>
+              <div class="arcade__boot-line"></div>
+              <div class="arcade__boot-logo"><span>ARCADE</span><em>共创街机厅</em></div>
+            </div>
+
+            <div class="arcade__lobby" id="arcadeLobby" hidden>
+              <div class="arcade__lobby-head">
+                <div class="arcade__lobby-title">
+                  <span>选择游戏</span>
+                  <em id="gameCount">14 款</em>
+                </div>
+                <div class="arcade__lobby-tools">
+                  <div class="game-filters" id="gameFilters" role="tablist" aria-label="按类型筛选"></div>
+                  <label class="search">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.6-3.6" /></svg>
+                    <input type="search" id="gameSearch" placeholder="搜索游戏…" autocomplete="off" aria-label="搜索小游戏" />
+                  </label>
+                </div>
+              </div>
+              <div class="game-grid" id="gameGrid"></div>
+              <p class="empty" id="gameEmpty" hidden>没有找到匹配的游戏。</p>
+            </div>
+
+            <iframe id="arcadeFrame" title="街机游戏" allow="fullscreen; autoplay" allowfullscreen loading="lazy" referrerpolicy="no-referrer"></iframe>
+          </div>
+
+          <div class="arcade__foot">
+            <span class="arcade__brand">共创工作室 · 街机厅</span>
+            <span class="arcade__hint" id="arcadeHint">按电源开机 · 点卡带进入游戏</span>
+            <a class="arcade__link" href="apps/arcade/index.html" target="_blank" rel="noopener noreferrer">独立窗口 ↗</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 分区六：Minecraft 专站（原 r3） ========== -->
+    <section class="view" data-view="minecraft" id="view-minecraft">
+      <div class="mc-hero">
+        <div class="wrap">
+          <h1>你好，我是 <span class="mc-name">小鲨鱼</span><br />欢迎来到 Minecraft 专站.</h1>
+          <p class="mc-hero__lead">生电技术服 · 地球 3.0 整合包 · 30 人共创团队，一起玩梗、一起创作、一起把热爱变成闪闪发光的事业。</p>
+          <div class="mc-hero__actions">
+            <a class="btn btn--primary" href="#mc-about" data-scroll-to="mc-about">下一页</a>
+            <a class="btn btn--ghost" href="#/home">回到首页</a>
+          </div>
+        </div>
+      </div>
+
+      <section class="mc-screen" id="mc-about">
+        <div class="wrap">
+          <h2 class="mc-heading">工作室介绍</h2>
+          <div class="mc-about reveal reveal--d1">
+            <div class="mc-about__media">
+              <img src="assets/avatar.png" alt="小鲨鱼头像" width="360" height="360" />
+            </div>
+            <div class="mc-about__body">
+              <p>共创工作室 —— 不止游戏，更是热爱者的共创天地
+我们是一群因热爱相聚的 30 人规模共创团队，以《我的世界》服务器为核心阵地，同时深耕短视频制作、AI 创意创作、专业视频剪辑、直播运营、视觉设计五大领域，打造多元内容生态与趣味交流空间。
+作为主打游戏闲聊 + 轻松共创的特色工作室，我们打破严肃创作壁垒，在轻松自在的氛围里交流游戏心得、碰撞创意灵感，一边守护稳定有趣的 MC 服务器，为玩家打造温馨游戏家园；一边用 AI 与剪辑、设计技能，产出优质内容，让热爱变现、让创意落地。
+这里没有刻板规则，只有志同道合的伙伴；</p>
+              <p>不只是内容创作平台，更是所有热爱游戏与创意的人的聚集地。欢迎每一个有趣的灵魂加入，一起玩梗、一起创作、一起把热爱变成闪闪发光的事业！</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mc-screen" id="mc-project-1">
+        <div class="wrap">
+          <h2 class="mc-heading">Minecraft 服务器介绍</h2>
+          <article class="mc-project reveal">
+            <div class="mc-project__body">
+              <h3>关于 minecraft 1.21.11 生电服</h3>
+              <p>Minecraft1.21.11 fabric 本服务器是专注我的世界原版生存电力(生电)的纯净技术服，由共创工作室长期维护完善。服务器坚持原版机制，无破坏平衡的插件与权限，完整保留红石、农场、村民工程、自动化机械等核心特性，支持各类生电装置稳定运行。我们注重公平环境与流畅体验，鼓励技术交流、团队协作与创意建造，为红石爱好者、生存玩家与技术党提供专业、友好、长期稳定的游戏平台。无论你是萌新还是大佬，都能在这里自由探索、共同成长，打造属于你的方块工业世界。</p>
+              <button class="btn btn--primary btn--sm" type="button" data-act="show-address" data-address="暂停服务 404">查看地址</button>
+            </div>
+            <div class="mc-project__media">
+              <img src="assets/mc-survival.jpg" alt="Minecraft 生电服截图" width="1600" height="900" loading="lazy" />
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="mc-screen" id="mc-project-2">
+        <div class="wrap">
+          <article class="mc-project reveal">
+            <div class="mc-project__body">
+              <h3>关于地球 3.0 整合包玩法服</h3>
+              <p>《我的世界地球 3.0》是基于 Java 1.20.1 forge 端制作的精品整合包，内含 300 + 优质模组，主打真实生态、沉浸式冒险与休闲建造。整合包优化完善，搭配光影与精美材质，画面流畅细腻，还原丰富地貌与动态生态。玩法集冒险、RPG、科技、生活于一体，拥有任务天赋、全新怪物与 BOSS、载具、农耕、建筑装饰等多元内容，支持单人畅玩与多人联机。</p>
+              <p>整合包导入即玩、无需折腾，兼顾画质与性能，适合喜欢高沉浸生存、长期探索的玩家，是兼顾颜值与可玩性的全能型整合包。</p>
+              <button class="btn btn--primary btn--sm" type="button" data-act="show-address" data-address="暂停服务 404">查看地址</button>
+            </div>
+            <div class="mc-project__media">
+              <img src="assets/mc-earth.jpg" alt="地球 3.0 整合包截图" width="1600" height="900" loading="lazy" />
+            </div>
+          </article>
+        </div>
+      </section>
+    </section>
+
+  </main>
+
+  <!-- ===================== 页脚 ===================== -->
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <p>© <span id="year">2026</span> 网站制作者 <a href="https://gitee.com/xiaoyue_bai" target="_blank" rel="noopener noreferrer">小鲨鱼</a> · 用 ♥ 创造美好</p>
+      <span class="site-footer__qq">交流群 <b>377542173</b></span>
+      <div class="site-footer__links">
+        <a href="https://store.steampowered.com/" target="_blank" rel="noopener noreferrer">STEAM 官网</a>
+        <a href="https://www.miyoushe.com/ys/" target="_blank" rel="noopener noreferrer">米游社</a>
+        <a href="https://www.gequbao.com/" target="_blank" rel="noopener noreferrer">歌曲宝</a>
+        <a href="https://wwbpj.lanzouw.com/iNP074cpznte" target="_blank" rel="noopener noreferrer" data-act="pcl2-download">PCL2 下载</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===================== 手机抽屉 ===================== -->
+  <div class="scrim" id="scrim" hidden></div>
+  <aside class="drawer" id="drawer" aria-hidden="true" aria-label="分区菜单">
+    <div class="drawer__head">
+      <span class="drawer__title">分区</span>
+      <button class="icon-btn" type="button" data-act="close-drawer" aria-label="关闭菜单">
+        <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" /></svg>
+      </button>
+    </div>
+    <div id="drawerList"></div>
+  </aside>
+
+  <!-- ===================== 设置面板 ===================== -->
+  <div class="modal" id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" aria-hidden="true">
+    <div class="modal__card" tabindex="-1">
+      <div class="modal__head">
+        <h2 id="settingsTitle">设置</h2>
+        <button class="icon-btn" type="button" data-act="close-settings" aria-label="关闭设置">
+          <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" /></svg>
+        </button>
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-group__title"><span>显示分区</span></div>
+        <p class="setting-group__desc">关闭后只在顶栏、抽屉和排序里隐藏；直接输入地址仍可访问。首页与 Minecraft 固定显示。</p>
+        <ul class="visibility-list" id="visibilityList"></ul>
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-group__title">
+          <span>自定义分区顺序</span>
+          <span style="font-size:12px;font-weight:400;color:var(--ink-faint)">拖动或点箭头调整</span>
+        </div>
+        <p class="setting-group__desc">顶部标签栏默认按固定顺序排列，排序入口只放在这里；保存后顺序即被固定下来。</p>
+        <ul class="order-list" id="orderList"></ul>
+        <div class="modal__actions" style="margin-top:12px">
+          <button class="btn btn--sm" type="button" data-act="reset-order">恢复默认顺序</button>
+          <button class="btn btn--primary btn--sm" type="button" data-act="save-order">保存并固定</button>
+        </div>
+      </div>
+
+      <div class="setting-group" style="margin-bottom:0">
+        <div class="setting-group__title"><span>当前环境</span></div>
+        <p class="setting-group__desc" id="envInfo" style="margin-bottom:0"></p>
+      </div>
+
+      <p class="modal__meta">提示：背景图在 <code>assets/bg-main.jpg</code> 一处替换即可全站生效；具体位置见 README。</p>
+    </div>
+  </div>
+
+  <div class="modal" id="addressModal" role="dialog" aria-modal="true" aria-labelledby="addressTitle" aria-hidden="true">
+    <div class="modal__card modal__card--address" tabindex="-1">
+      <div class="modal__head">
+        <h2 id="addressTitle">服务器地址</h2>
+      </div>
+      <div class="address-body">
+        <span class="address-label">服务器地址</span>
+        <button class="address-value" type="button" id="addressValue">暂停服务 404</button>
+        <p class="address-hint">点击地址或「复制地址」按钮即可复制</p>
+      </div>
+      <div class="modal__actions">
+        <button class="btn btn--ghost btn--sm" type="button" data-act="copy-address">复制地址</button>
+        <button class="btn btn--primary btn--sm" type="button" data-act="confirm-address">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

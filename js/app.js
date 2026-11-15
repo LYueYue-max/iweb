@@ -650,7 +650,7 @@
     var html = "";
     var shown = 0;
 
-    arcade.games.forEach(function (game) {
+    arcade.games.forEach(function (game, gameIndex) {
       var hitCat = arcade.cat === "全部" || game.cat === arcade.cat;
       var hay = (game.name + " " + game.cat + " " + game.desc).toLowerCase();
       var hitTerm = !q || hay.indexOf(q) !== -1;
@@ -659,6 +659,7 @@
 
       var best = Number(scores[game.id]) || 0;
       var live = arcade.current === game.id ? " is-live" : "";
+      var num = String(gameIndex + 1).padStart(2, "0");
       html +=
         '<button type="button" class="game-card' +
         live +
@@ -666,30 +667,25 @@
         game.id +
         '" style="--game-accent:' +
         gameAccent(game) +
-        '" aria-label="开机玩 ' +
+        '" aria-label="进入游戏 ' +
         escapeHtml(game.name) +
         '">' +
         '<span class="game-card__top">' +
-        '<span class="game-card__ico" aria-hidden="true">' +
-        game.icon +
-        "</span>" +
-        '<span class="game-card__cat">' +
-        escapeHtml(game.cat) +
-        "</span>" +
-        "</span>" +
-        '<span class="game-card__name">' +
-        escapeHtml(game.name) +
+        '<span class="game-card__no">' + num + "</span>" +
+        '<span class="game-card__title"><b>' + escapeHtml(game.name) + "</b><em>" +
+        escapeHtml(game.en || "") + "</em></span>" +
         "</span>" +
         '<span class="game-card__desc">' +
         escapeHtml(game.desc) +
         "</span>" +
         '<span class="game-card__foot">' +
+        '<span class="game-card__cat">' + escapeHtml(game.cat) + "</span>" +
         '<span class="game-card__best">最高 <b data-best="' +
         game.id +
         '">' +
         best +
         "</b></span>" +
-        '<span class="game-card__play">开机 ▶</span>' +
+        '<span class="game-card__play">进入游戏</span>' +
         "</span>" +
         "</button>";
     });

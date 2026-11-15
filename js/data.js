@@ -26,20 +26,20 @@ window.SITE = {
     bestKey: "mg_scores",
     categories: ["全部", "东方", "街机", "益智", "对弈"],
     games: [
-      { id: "touhou", name: "東方妖々夢 · 网页版", icon: "🌸", cat: "东方", desc: "弹幕射击：三面 + 符卡 + 樱点结界，机体与难度可选，进度存在本地。" },
-      { id: "snake", name: "贪吃蛇", icon: "🐍", cat: "街机", desc: "方向键 / WASD 转向，吃果子变长，别咬到自己。" },
-      { id: "tetris", name: "俄罗斯方块", icon: "🧱", cat: "街机", desc: "七种方块落下，消行得分，速度越叠越快。" },
-      { id: "breakout", name: "打砖块", icon: "🧨", cat: "街机", desc: "左右移动挡板，一颗球敲掉整面砖墙。" },
-      { id: "invaders", name: "太空侵略者", icon: "👾", cat: "街机", desc: "击落一波波太空敌机，别让它们压到底线。" },
-      { id: "pong", name: "乒乓球 Pong", icon: "🏓", cat: "街机", desc: "和电脑对拍，先得 7 分获胜。" },
-      { id: "flappy", name: "像素鸟", icon: "🐤", cat: "街机", desc: "点一下扇一次翅膀，穿过水管缝隙。" },
-      { id: "2048", name: "2048", icon: "🔢", cat: "益智", desc: "合并相同数字，一路凑出 2048 方块。" },
-      { id: "minesweeper", name: "扫雷", icon: "💣", cat: "益智", desc: "三档棋盘，插旗排雷，一步踩空全盘结束。" },
-      { id: "memory", name: "记忆翻牌", icon: "🃏", cat: "益智", desc: "翻开两张配对，记住图案位置。" },
-      { id: "fifteen", name: "数字华容道", icon: "🧮", cat: "益智", desc: "滑动方块，把 1–15 还原成顺序。" },
-      { id: "linklink", name: "连连看", icon: "🀄", cat: "益智", desc: "两张相同图案连线消除，清空棋盘。" },
-      { id: "gomoku", name: "五子棋", icon: "⚫", cat: "对弈", desc: "和电脑轮流落子，五子连珠即胜。" },
-      { id: "tictactoe", name: "井字棋", icon: "❌", cat: "对弈", desc: "三格连成一线获胜，三档对手强度。" }
+      { id: "touhou", name: "東方妖々夢 · 网页版", en: "Perfect Cherry Blossom", icon: "🌸", cat: "东方", desc: "弹幕射击：三面 + 符卡 + 樱点结界，机体与难度可选，进度存在本地。" },
+      { id: "snake", name: "贪吃蛇", en: "Snake", icon: "🐍", cat: "街机", desc: "方向键 / WASD 转向，吃果子变长，别咬到自己。" },
+      { id: "tetris", name: "俄罗斯方块", en: "Tetris", icon: "🧱", cat: "街机", desc: "七种方块落下，消行得分，速度越叠越快。" },
+      { id: "breakout", name: "打砖块", en: "Breakout", icon: "🧨", cat: "街机", desc: "左右移动挡板，一颗球敲掉整面砖墙。" },
+      { id: "invaders", name: "太空侵略者", en: "Space Invaders", icon: "👾", cat: "街机", desc: "击落一波波太空敌机，别让它们压到底线。" },
+      { id: "pong", name: "乒乓球 Pong", en: "Pong", icon: "🏓", cat: "街机", desc: "和电脑对拍，先得 7 分获胜。" },
+      { id: "flappy", name: "像素鸟", en: "Flappy Bird", icon: "🐤", cat: "街机", desc: "点一下扇一次翅膀，穿过水管缝隙。" },
+      { id: "2048", name: "2048", en: "2048", icon: "🔢", cat: "益智", desc: "合并相同数字，一路凑出 2048 方块。" },
+      { id: "minesweeper", name: "扫雷", en: "Minesweeper", icon: "💣", cat: "益智", desc: "三档棋盘，插旗排雷，一步踩空全盘结束。" },
+      { id: "memory", name: "记忆翻牌", en: "Memory", icon: "🃏", cat: "益智", desc: "翻开两张配对，记住图案位置。" },
+      { id: "fifteen", name: "数字华容道", en: "15 Puzzle", icon: "🧮", cat: "益智", desc: "滑动方块，把 1–15 还原成顺序。" },
+      { id: "linklink", name: "连连看", en: "Link Link", icon: "🀄", cat: "益智", desc: "两张相同图案连线消除，清空棋盘。" },
+      { id: "gomoku", name: "五子棋", en: "Gomoku", icon: "⚫", cat: "对弈", desc: "和电脑轮流落子，五子连珠即胜。" },
+      { id: "tictactoe", name: "井字棋", en: "Tic-Tac-Toe", icon: "❌", cat: "对弈", desc: "三格连成一线获胜，三档对手强度。" }
     ]
   }
 };

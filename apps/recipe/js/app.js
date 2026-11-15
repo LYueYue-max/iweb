@@ -134,8 +134,8 @@
         '<div class="auth-card">' +
           '<div class="auth-logo"><img src="ict.jpg" alt="logo"></div>' + 
           '<h1>小鲨鱼菜谱</h1>' +
-          '<p class="auth-sub">圆润 · 简洁 · 清爽的菜谱库</p>' +
-          '<p class="auth-note">账户与密码仅保存在本机浏览器，不会上传到服务器。</p>' +
+          '<p class="auth-sub">       </p>' +
+          '<p class="auth-note">      </p>' +
           '<form id="login-form" novalidate>' +
             '<label class="field"><span>用户名 / UID</span>' +
               '<input type="text" id="login-id" autocomplete="username" placeholder="请输入用户名或 UID"></label>' +

@@ -696,3 +696,49 @@ body[data-theme="dark"] .auth-note {
     padding-bottom: 0;
   }
 }
+
+
+/* 未登录：白/奶油底 + 浅色登录卡片，只保留登录卡片 */
+.auth-wrap {
+  background: #f8f4ea !important;
+  background-image: none !important;
+}
+
+.auth-card {
+  background: #fff !important;
+  color: #1a1a2e !important;
+  border: 1px solid #e9e1d2;
+  box-shadow: 0 26px 60px -34px rgba(40, 35, 25, 0.32) !important;
+}
+
+.auth-card h1 {
+  color: #1a1a2e;
+}
+
+.auth-card .auth-sub,
+.auth-card .auth-foot {
+  color: #6b6470;
+}
+
+.auth-card .auth-foot a {
+  color: #e26a9a;
+}
+
+.auth-card label {
+  color: #3a3440;
+}
+
+.auth-card input {
+  background: #f7f9fc !important;
+  border: 1px solid #e6e1d6 !important;
+  color: #1a1a2e !important;
+}
+
+.auth-card .auth-note {
+  background: #f7f4ec;
+  color: #6b6470;
+}
+
+.auth-card .auth-logo {
+  background: linear-gradient(135deg, #fde7f0, #e6f6f1);
+}

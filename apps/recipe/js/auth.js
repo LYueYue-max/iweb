@@ -131,23 +131,36 @@
       };
     },
 
-    verifyAdminPassword: async function (password) {
-      var admin = RM.Store.getUserByUid('000000');
-      if (!admin) return false;
-      return await RM.verifyPassword(password, admin.passHash);
+    /* 校验当前登录账户的密码（敏感操作二次确认用） */
+    verifyCurrentPassword: async function (password) {
+      var user = RM.Store.currentUser();
+      if (!user) return false;
+      return await RM.verifyPassword(password, user.passHash);
     },
 
-    changeAdminPassword: async function (oldPw, newPw) {
-      var admin = RM.Store.getUserByUid('000000');
-      if (!admin) return { ok: false, msg: '管理员账户异常' };
+    /* 兼容旧调用名 */
+    verifyAdminPassword: async function (password) {
+      return await RM.Auth.verifyCurrentPassword(password);
+    },
 
-      var ok = await RM.verifyPassword(oldPw, admin.passHash);
+    /* 修改当前登录账户的密码（站长 / 管理员共用，不再写死 UID 000000） */
+    changePassword: async function (oldPw, newPw) {
+      var user = RM.Store.currentUser();
+      if (!user) return { ok: false, msg: '登录状态异常，请重新登录' };
+
+      var ok = await RM.verifyPassword(oldPw, user.passHash);
       if (!ok) return { ok: false, msg: '当前密码不正确' };
       if (!newPw || String(newPw) === '') return { ok: false, msg: '新密码不能为空' };
 
-      admin.passHash = await RM.hashPassword(newPw);
+      user.passHash = await RM.hashPassword(newPw);
+      user.mustChangePassword = false;
       RM.Store.save();
-      return { ok: true, msg: '管理员密码已更新' };
+      return { ok: true, msg: '密码已更新' };
+    },
+
+    /* 兼容旧调用名 */
+    changeAdminPassword: async function (oldPw, newPw) {
+      return await RM.Auth.changePassword(oldPw, newPw);
     },
 
     logout: function () {

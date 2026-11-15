@@ -29,6 +29,10 @@
       ]
     },
     {
+      type: 'link', path: '/admin/owner', icon: '👑', label: '站长专区',
+      ownerOnly: true, badgeKey: 'roleRequests'
+    },
+    {
       type: 'group', key: 'account', icon: '🔒', label: '我的账户',
       items: [
         { path: '/admin/profile', label: '个人资料' },
@@ -49,6 +53,7 @@
       var db = RM.Store.db;
       var user = RM.Store.currentUser();
       var pendingCount = db.users.filter(function (u) { return u.status === 'pending'; }).length;
+      var roleReqCount = RM.Store.pendingRoleRequests().length;
       var unread = RM.Store.unreadCount(user);
 
       app.innerHTML =
@@ -61,7 +66,7 @@
             '</div>' +
           '</header>' +
           '<aside class="sidebar">' +
-            this.navHtml(path, pendingCount) +
+            this.navHtml(path, pendingCount, roleReqCount, user) +
 
           '</aside>' +
           '<main class="main" id="main"></main>' +
@@ -118,12 +123,16 @@
         case '/admin/announcements': self.renderAnnouncements(main); break;
         case '/admin/logs': self.renderLogs(main); break;
         case '/admin/backup': self.renderBackup(main); break;
+        case '/admin/owner': self.renderOwnerZone(main); break;
         default: self.renderDashboard(main); break;
       }
     },
 
-    navHtml: function (path, pendingCount) {
-      return NAV.map(function (n) {
+    navHtml: function (path, pendingCount, roleReqCount, user) {
+      var isOwner = RM.Perm.isOwner(user);
+      return NAV.filter(function (n) {
+        return !n.ownerOnly || isOwner;
+      }).map(function (n) {
         if (n.type === 'group') {
           var hasActive = n.items.some(function (it) { return it.path === path; });
           var groupBadge = (n.key === 'users' && pendingCount > 0)
@@ -145,15 +154,18 @@
           '</div>';
         }
         var active = n.path === path ? ' active' : '';
+        var badge = (n.badgeKey === 'roleRequests' && roleReqCount > 0)
+          ? '<span class="nav-count">' + roleReqCount + '</span>' : '';
         return '<a class="nav-item' + active + '" href="#' + n.path + '">' +
           '<span class="nav-ico">' + n.icon + '</span>' +
-          '<span>' + n.label + '</span></a>';
+          '<span>' + n.label + '</span>' + badge + '</a>';
       }).join('');
     },
 
     renderDashboard: function (main) {
       var db = RM.Store.db;
       var all = RM.Store.allRecipes();
+      var owners = db.users.filter(function (u) { return u.role === 'owner' && u.status === 'active'; }).length;
       var admins = db.users.filter(function (u) { return u.role === 'admin' && u.status === 'active'; }).length;
       var users = db.users.filter(function (u) { return u.role === 'user' && !u.guest; }).length;
       var pending = db.users.filter(function (u) { return u.status === 'pending'; }).length;
@@ -201,7 +213,9 @@
           '<p class="sub">欢迎回来，小鲨鱼。这里可以看到站点概览。</p>' +
         '</div>' +
         '<div class="stat-grid">' +
-          '<div class="stat-card"><div class="stat-label">活跃管理员</div>' +
+          '<div class="stat-card"><div class="stat-label">站长</div>' +
+            '<div class="stat-value gold">' + owners + '</div></div>' +
+          '<div class="stat-card"><div class="stat-label">管理员</div>' +
             '<div class="stat-value blue">' + admins + '</div></div>' +
           '<div class="stat-card"><div class="stat-label">普通用户</div>' +
             '<div class="stat-value blue">' + users + '</div></div>' +
@@ -223,18 +237,6 @@
         '<div class="card" style="margin-bottom:22px">' +
           '<h3 style="font-size:15px;margin-bottom:6px">近 7 天查看菜谱次数</h3>' +
           chartHtml('view') +
-        '</div>' +
-        '<div class="card">' +
-          '<h3 style="margin-bottom:10px;font-size:16px">演示说明</h3>' +
-          '<p class="sub" style="line-height:1.9">' +
-            '本网站为纯前端静态菜谱站，所有用户数据（账号、收藏、菜单、历史、偏好）保存在当前浏览器的 localStorage 中。' +
-          '</p>' +
-          '<p class="sub" style="line-height:1.9;margin-top:8px">' +
-            '官方菜谱库以 JSON 分片形式托管在 <code>data/</code>，按菜系独立加载，单文件远低于 5MB。' +
-          '</p>' +
-          '<p class="sub" style="line-height:1.9;margin-top:8px">' +
-            '初始账户信息请查看部署说明，首次登录后请立即修改密码。' +
-          '</p>' +
         '</div>';
     },
 
@@ -265,7 +267,8 @@
               '<button type="button" class="row-name-btn" data-open="' + RM.escapeHtml(u.uid) + '">' +
                 RM.escapeHtml(u.username) + '</button> ' +
               '<span class="badge">UID ' + RM.escapeHtml(u.uid) + '</span>' +
-              (u.role === 'admin' ? ' <span class="badge badge-primary">管理员</span>' : '') +
+              (u.role === 'owner' ? ' <span class="badge badge-owner">👑 站长</span>'
+                : (u.role === 'admin' ? ' <span class="badge badge-primary">管理员</span>' : '')) +
               (u.guest ? ' <span class="badge badge-mint">游客</span>' : '') +
             '</div></div></div>';
         }).join('') : '<div class="empty">没有匹配的用户</div>') +
@@ -285,6 +288,15 @@
     },
 
     openUserDrawer: function (u) {
+      var me = RM.Store.currentUser();
+      if (!me) return;
+      if (u.role === 'owner' && !RM.Perm.isOwner(me)) {
+        RM.toast('仅站长可查看站长账户详情', 'error'); return;
+      }
+      if (u.role === 'admin' && !RM.Perm.isOwner(me)) {
+        RM.toast('仅站长可查看管理员账户详情', 'error'); return;
+      }
+
       var existingM = document.querySelector('.drawer-mask');
       var existingD = document.querySelector('.drawer');
       if (existingM) existingM.remove();
@@ -316,7 +328,8 @@
           '<div class="drawer-section">' +
             '<div class="drawer-kv"><span>UID</span><b>' + RM.escapeHtml(u.uid) + '</b></div>' +
             '<div class="drawer-kv"><span>角色</span><b>' +
-              (u.role === 'admin' ? '管理员' : (u.guest ? '游客' : '普通用户')) + '</b></div>' +
+              (u.role === 'owner' ? '👑 站长'
+                : (u.role === 'admin' ? '管理员' : (u.guest ? '游客' : '普通用户'))) + '</b></div>' +
             '<div class="drawer-kv"><span>状态</span><b>' + statusText + '</b></div>' +
             '<div class="drawer-kv"><span>封禁</span><b>' + banText + '</b></div>' +
             '<div class="drawer-kv"><span>冻结</span><b>' + freezeText + '</b></div>' +
@@ -417,6 +430,7 @@
     renderUsers: function (main) {
       var self = this;
       var me = RM.Store.currentUser();
+      var isOwner = RM.Perm.isOwner(me);
       var allUsers = RM.Store.db.users.filter(function (u) { return !u.guest && u.status !== 'pending' && u.status !== 'rejected'; });
 
       main.innerHTML =
@@ -428,7 +442,8 @@
             '<label class="field"><span>用户名</span><input type="text" id="nu-name" placeholder="用户名" autocomplete="off"></label>' +
             '<label class="field"><span>UID</span><input type="text" id="nu-uid" placeholder="6 位数字" autocomplete="off"></label>' +
             '<label class="field"><span>初始密码</span><input type="text" id="nu-pw" placeholder="用户首次登录需修改" autocomplete="off"></label>' +
-            '<label class="field"><span>角色</span><select id="nu-role"><option value="user">普通用户</option><option value="admin">管理员</option></select></label>' +
+            '<label class="field"><span>角色</span><select id="nu-role"><option value="user">普通用户</option>' +
+              (isOwner ? '<option value="admin">管理员</option>' : '') + '</select></label>' +
             '<label class="field"><span>状态</span><select id="nu-status"><option value="active">启用</option><option value="disabled">禁用</option></select></label>' +
           '</div>' +
           '<div class="form-msg" id="nu-msg"></div>' +
@@ -466,6 +481,9 @@
         if (RM.Store.isUidTaken(uid)) { msg.textContent = '该 UID 已被占用'; msg.className = 'form-msg error'; return; }
         var pwErr = RM.validatePassword(pw);
         if (pwErr) { msg.textContent = pwErr; msg.className = 'form-msg error'; return; }
+        if (role === 'admin' && !RM.Perm.can(me, 'role.promote')) {
+          msg.textContent = '只有站长可以直接创建管理员账户'; msg.className = 'form-msg error'; return;
+        }
 
         var hash = await RM.hashPassword(pw);
         var newUser = {
@@ -501,17 +519,15 @@
       var host = main.querySelector('#user-list');
       if (!filtered.length) { host.innerHTML = '<div class="empty">暂无用户</div>'; return; }
 
-      var activeAdminCount = allUsers.filter(function (u) {
-        return u.role === 'admin' && u.status === 'active';
-      }).length;
-
       host.innerHTML = paged.items.map(function (u) {
         var ban = RM.Store.banState(u);
         var freeze = RM.Store.freezeState(u);
         var locked = u.loginFail && u.loginFail.until > Date.now();
         var isMe = u.uid === me.uid;
-        var isSystemAdmin = u.uid === '000000';
-        var isLastAdmin = u.role === 'admin' && activeAdminCount <= 1;
+        var isOwnerTarget = u.role === 'owner';
+        var isAdminTarget = u.role === 'admin';
+        var canManage = RM.Perm.canManage(me, u);
+        var pendingReq = RM.Store.hasPendingRoleRequest(u.uid);
 
         var statusBadge = u.status === 'active'
           ? '<span class="badge badge-ok">正常</span>'
@@ -524,35 +540,38 @@
           : '<span class="badge badge-primary">冻结中 · 还剩 <b data-countdown data-end="' + freeze.end + '"></b></span>') : '';
         var lockBadge = locked ? '<span class="badge badge-warn">登录锁定中</span>' : '';
         var meBadge = isMe ? '<span class="badge badge-primary">当前账户</span>' : '';
-        var lastBadge = isLastAdmin ? '<span class="badge badge-warn">最后管理员</span>' : '';
-        var roleBadge = u.role === 'admin'
-          ? '<span class="badge badge-primary">管理员</span>'
-          : '<span class="badge">普通用户</span>';
+        var roleBadge = isOwnerTarget
+          ? '<span class="badge badge-owner">👑 站长</span>'
+          : (isAdminTarget ? '<span class="badge badge-primary">管理员</span>' : '<span class="badge">普通用户</span>');
+        var pendingBadge = pendingReq ? '<span class="badge badge-warn">待站长审核</span>' : '';
 
         var ops = '';
         if (isMe) {
           ops = '<span class="sub" style="font-size:12px">不能操作自己</span>';
+        } else if (isOwnerTarget) {
+          ops = '<span class="sub" style="font-size:12px">站长账户受保护</span>';
+        } else if (!canManage) {
+          ops = '<span class="sub" style="font-size:12px">仅站长可操作</span>';
         } else {
           ops =
-            '<button type="button" class="btn btn-sm btn-ghost" data-act="rename"' +
-              (isSystemAdmin ? ' disabled title="系统管理员用户名固定"' : '') + '>改用户名</button>' +
-            '<button type="button" class="btn btn-sm btn-ghost" data-act="reuid"' +
-              (isSystemAdmin ? ' disabled title="系统管理员 UID 固定"' : '') + '>改 UID</button>' +
+            '<button type="button" class="btn btn-sm btn-ghost" data-act="rename">改用户名</button>' +
+            '<button type="button" class="btn btn-sm btn-ghost" data-act="reuid">改 UID</button>' +
             '<button type="button" class="btn btn-sm btn-ghost" data-act="repwd">改密码</button>';
           if (u.status === 'active') {
-            ops += '<button type="button" class="btn btn-sm btn-warn" data-act="disable"' +
-              (isLastAdmin || isSystemAdmin ? ' disabled title="不能禁用该账户"' : '') + '>禁用</button>';
+            ops += '<button type="button" class="btn btn-sm btn-warn" data-act="disable">禁用</button>';
           } else {
             ops += '<button type="button" class="btn btn-sm btn-ok" data-act="enable">启用</button>';
           }
-          if (u.role === 'admin') {
-            ops += '<button type="button" class="btn btn-sm btn-ghost" data-act="demote"' +
-              (isLastAdmin || isSystemAdmin ? ' disabled title="不能降级该账户"' : '') + '>降为用户</button>';
-          } else {
+          if (isAdminTarget) {
+            ops += '<button type="button" class="btn btn-sm btn-ghost" data-act="demote">降为用户</button>';
+          } else if (pendingReq) {
+            ops += '<button type="button" class="btn btn-sm btn-ghost" disabled title="已有待站长审核的申请">待站长审核</button>';
+          } else if (isOwner) {
             ops += '<button type="button" class="btn btn-sm btn-ghost" data-act="promote">升为管理员</button>';
+          } else {
+            ops += '<button type="button" class="btn btn-sm btn-ghost" data-act="request-promote">申请升级</button>';
           }
-          ops += '<button type="button" class="btn btn-sm btn-danger" data-act="delete"' +
-            (isLastAdmin || isSystemAdmin ? ' disabled title="不能删除该账户"' : '') + '>删除</button>';
+          ops += '<button type="button" class="btn btn-sm btn-danger" data-act="delete">删除</button>';
         }
 
         return '<div class="row-card" data-uid="' + RM.escapeHtml(u.uid) + '">' +
@@ -561,7 +580,7 @@
               '<button type="button" class="row-name-btn" data-open="' + RM.escapeHtml(u.uid) + '">' +
                 RM.escapeHtml(u.username) + '</button>' +
               ' <span class="badge">UID ' + RM.escapeHtml(u.uid) + '</span> ' +
-              roleBadge + statusBadge + banBadge + freezeBadge + lockBadge + meBadge + lastBadge +
+              roleBadge + statusBadge + banBadge + freezeBadge + lockBadge + meBadge + pendingBadge +
             '</div>' +
             '<div class="row-sub">注册时间：' + new Date(u.createdAt).toLocaleString() + '</div>' +
           '</div>' +
@@ -585,24 +604,27 @@
         if (act === 'rename') self.actionRename(user);
         else if (act === 'reuid') self.actionChangeUid(user);
         else if (act === 'repwd') self.actionChangePassword(user);
-        else if (act === 'disable') self.actionSetStatus(user, 'disabled', activeAdminCount);
-        else if (act === 'enable') self.actionSetStatus(user, 'active', activeAdminCount);
+        else if (act === 'disable') self.actionSetStatus(user, 'disabled');
+        else if (act === 'enable') self.actionSetStatus(user, 'active');
         else if (act === 'promote') self.actionSetRole(user, 'admin');
-        else if (act === 'demote') self.actionSetRole(user, 'user', activeAdminCount);
-        else if (act === 'delete') self.actionDeleteUser(user, activeAdminCount);
+        else if (act === 'demote') self.actionSetRole(user, 'user');
+        else if (act === 'request-promote') self.actionRequestPromote(user);
+        else if (act === 'delete') self.actionDeleteUser(user);
       });
     },
 
-    _lastAdminGuard: function (target, activeAdminCount) {
+    /* 统一权限判断：返回错误文案或 null */
+    _guard: function (target) {
       var me = RM.Store.currentUser();
-      if (target.uid === '000000') return '系统管理员账户不可执行此操作';
+      if (!me) return '登录状态异常，请重新登录';
+      if (target.uid === '000000' || target.role === 'owner') return '站长账户受保护，不可操作';
       if (target.uid === me.uid) return '不能对自己执行此操作';
-      if (target.role === 'admin' && activeAdminCount <= 1) return '不能操作最后一个管理员';
+      if (!RM.Perm.canManage(me, target)) return '仅站长可操作管理员账户';
       return null;
     },
 
-    actionSetStatus: async function (user, status, activeAdminCount) {
-      var err = this._lastAdminGuard(user, activeAdminCount);
+    actionSetStatus: async function (user, status) {
+      var err = this._guard(user);
       if (err) { RM.toast(err, 'error'); return; }
       var label = status === 'disabled' ? '禁用' : '启用';
       var ok = await RM.confirm({
@@ -615,9 +637,13 @@
       RM.Store.save(); RM.toast('已' + label, 'ok'); RM.rerender();
     },
 
-    actionSetRole: async function (user, role, activeAdminCount) {
-      var err = this._lastAdminGuard(user, activeAdminCount || 0);
+    actionSetRole: async function (user, role) {
+      var me = RM.Store.currentUser();
+      var err = this._guard(user);
       if (err) { RM.toast(err, 'error'); return; }
+      if (role === 'admin' && !RM.Perm.can(me, 'role.promote')) {
+        RM.toast('升为管理员需要站长操作，请使用「申请升级」', 'error'); return;
+      }
       var label = role === 'admin' ? '升为管理员' : '降为普通用户';
       var ok = await RM.confirm({
         title: label, message: '确定要将「' + user.username + '」' + label + '吗？',
@@ -629,8 +655,75 @@
       RM.Store.save(); RM.toast('角色已更新', 'ok'); RM.rerender();
     },
 
-    actionDeleteUser: async function (user, activeAdminCount) {
-      var err = this._lastAdminGuard(user, activeAdminCount);
+    /* 管理员为普通用户提交「升为管理员」申请，由站长审核 */
+    actionRequestPromote: async function (user) {
+      var me = RM.Store.currentUser();
+      if (!RM.Perm.can(me, 'role.request')) { RM.toast('没有权限提交申请', 'error'); return; }
+      if (user.role === 'owner' || user.role === 'admin') { RM.toast('该用户已经是后台账户', 'error'); return; }
+      if (RM.Store.hasPendingRoleRequest(user.uid)) { RM.toast('该用户已有待站长审核的申请', 'error'); return; }
+
+      var reason = await RM.prompt({
+        title: '申请升为管理员',
+        label: '申请理由（选填，最多 100 字）',
+        placeholder: '例如：负责菜谱内容维护',
+        validate: function (v) {
+          if (String(v || '').length > 100) return '理由不能超过 100 个字符';
+          return null;
+        }
+      });
+      if (reason == null) return;
+
+      var res = RM.Store.addRoleRequest(user.uid, reason);
+      if (!res.ok) { RM.toast(res.msg, 'error'); return; }
+      RM.Store.addLog('提交角色申请', user.username, 'UID ' + user.uid + (reason ? ' · ' + reason : ''));
+      RM.toast('申请已提交，等待站长审核', 'ok');
+      RM.rerender();
+    },
+
+    /* 站长审核角色申请 */
+    actionReviewRoleRequest: async function (req, approve) {
+      var me = RM.Store.currentUser();
+      if (!RM.Perm.can(me, 'role.review')) { RM.toast('仅站长可审核角色申请', 'error'); return; }
+      if (!req || req.status !== 'pending') return;
+
+      var target = RM.Store.getUserByUid(req.targetUid);
+      if (!target) {
+        req.status = 'invalid';
+        req.reviewedAt = Date.now();
+        req.reviewedBy = me.username;
+        RM.Store.save();
+        RM.toast('目标用户已不存在，申请已失效');
+        RM.rerender(); return;
+      }
+
+      var label = approve ? '批准' : '驳回';
+      var ok = await RM.confirm({
+        title: label + '申请',
+        message: label + '「' + target.username + '」升为管理员的申请吗？',
+        confirmText: label, danger: !approve
+      });
+      if (!ok) return;
+
+      req.status = approve ? 'approved' : 'rejected';
+      req.reviewedAt = Date.now();
+      req.reviewedBy = me.username;
+      if (approve) target.role = 'admin';
+
+      RM.Store.addLog(label + '角色申请', target.username, 'UID ' + target.uid);
+      if (req.requestedBy) {
+        RM.Store.sendNotification(
+          req.requestedBy,
+          '角色申请已' + (approve ? '通过' : '驳回'),
+          '你为「' + target.username + '」提交的升为管理员申请已' + (approve ? '通过' : '被驳回') + '。'
+        );
+      }
+      RM.Store.save();
+      RM.toast('已' + label, 'ok');
+      RM.rerender();
+    },
+
+    actionDeleteUser: async function (user) {
+      var err = this._guard(user);
       if (err) { RM.toast(err, 'error'); return; }
       var ok = await RM.confirm({
         title: '删除用户',
@@ -639,20 +732,21 @@
       });
       if (!ok) return;
       var pw = await RM.prompt({
-        title: '验证管理员密码',
-        label: '删除用户需要验证管理员密码',
-        type: 'password', placeholder: '请输入管理员密码', confirmText: '验证并删除'
+        title: '验证密码',
+        label: '删除账户需要验证你当前的登录密码',
+        type: 'password', placeholder: '请输入当前登录密码', confirmText: '验证并删除'
       });
       if (pw == null) return;
-      var okPw = await RM.Auth.verifyAdminPassword(pw);
-      if (!okPw) { RM.toast('管理员密码不正确', 'error'); return; }
+      var okPw = await RM.Auth.verifyCurrentPassword(pw);
+      if (!okPw) { RM.toast('密码不正确', 'error'); return; }
       RM.Store.removeUser(user.uid);
       RM.Store.addLog('删除用户', user.username, 'UID ' + user.uid);
       RM.toast('已删除用户', 'ok'); RM.rerender();
     },
 
     actionRename: async function (user) {
-      if (user.uid === '000000') { RM.toast('系统管理员用户名固定为「小鲨鱼」，不可修改', 'error'); return; }
+      var err = this._guard(user);
+      if (err) { RM.toast(err, 'error'); return; }
       var val = await RM.prompt({
         title: '修改用户名',
         label: '新的用户名（不允许空白、控制字符及 / \\ : * ? " < > | ）',
@@ -672,7 +766,8 @@
     },
 
     actionChangeUid: async function (user) {
-      if (user.uid === '000000') { RM.toast('系统管理员 UID 固定，不可修改', 'error'); return; }
+      var guardErr = this._guard(user);
+      if (guardErr) { RM.toast(guardErr, 'error'); return; }
       var val = await RM.prompt({
         title: '修改 UID', label: '新的 UID（6 位纯数字）', value: user.uid,
         validate: function (v) {
@@ -694,6 +789,8 @@
     },
 
     actionChangePassword: async function (user) {
+      var guardErr = this._guard(user);
+      if (guardErr) { RM.toast(guardErr, 'error'); return; }
       var val = await RM.prompt({
         title: '重置用户密码',
         label: '为「' + user.username + '」设置新密码（用户下次登录需修改）',
@@ -862,8 +959,7 @@
     renderRecipesManage: function (main) {
       var self = this;
       main.innerHTML =
-        '<div class="page-head"><h2>菜谱管理</h2>' +
-          '<p class="sub">管理员可添加本地菜谱（写入 localStorage），官方菜谱库在 data/ 目录下只读</p></div>' +
+        '<div class="page-head"><h2>菜谱管理</h2></div>' +
         '<form class="card form-grid" id="recipe-form">' +
           '<label class="field"><span>菜名</span>' +
             '<input type="text" id="r-title" placeholder="例如 番茄炒蛋" autocomplete="off"></label>' +
@@ -1036,13 +1132,16 @@
       var self = this;
       var all = RM.Store.db.logs.slice();
       self._logPage = 1;
+      var canClear = RM.Perm.can(RM.Store.currentUser(), 'logs.clear');
 
       main.innerHTML =
         '<div class="page-head"><h2>操作日志</h2>' +
           '<p class="sub">共 ' + all.length + ' 条记录（最多保留 500 条）</p></div>' +
-        '<div style="margin-bottom:16px">' +
-          '<button type="button" class="btn btn-sm btn-danger" id="clear-logs"' +
-            (all.length ? '' : ' disabled') + '>清空日志</button></div>' +
+        (canClear
+          ? '<div style="margin-bottom:16px">' +
+              '<button type="button" class="btn btn-sm btn-danger" id="clear-logs"' +
+                (all.length ? '' : ' disabled') + '>清空日志</button></div>'
+          : '') +
         '<div id="log-host"></div>';
 
       var host = main.querySelector('#log-host');
@@ -1061,16 +1160,8 @@
       }
       paint();
 
-      main.querySelector('#clear-logs').addEventListener('click', async function () {
-        var ok = await RM.confirm({
-          title: '清空日志', message: '确定要清空全部操作日志吗？此操作不可恢复。',
-          confirmText: '清空', danger: true
-        });
-        if (!ok) return;
-        RM.Store.db.logs = [];
-        RM.Store.addLog('清空日志', '', '');
-        RM.Store.save(); RM.toast('日志已清空', 'ok'); RM.rerender();
-      });
+      var clearBtn = main.querySelector('#clear-logs');
+      if (clearBtn) clearBtn.addEventListener('click', function () { self.actionClearLogs(); });
 
       host.addEventListener('click', function (e) {
         var btn = e.target.closest('[data-page]');
@@ -1080,22 +1171,38 @@
       });
     },
 
+    actionClearLogs: async function () {
+      var me = RM.Store.currentUser();
+      if (!RM.Perm.can(me, 'logs.clear')) { RM.toast('仅站长可清空日志', 'error'); return; }
+      var ok = await RM.confirm({
+        title: '清空日志', message: '确定要清空全部操作日志吗？此操作不可恢复。',
+        confirmText: '清空', danger: true
+      });
+      if (!ok) return;
+      RM.Store.db.logs = [];
+      RM.Store.addLog('清空日志', '', '');
+      RM.Store.save(); RM.toast('日志已清空', 'ok'); RM.rerender();
+    },
+
     renderBackup: function (main) {
+      var isOwner = RM.Perm.isOwner(RM.Store.currentUser());
       main.innerHTML =
         '<div class="page-head"><h2>备份与恢复</h2>' +
-          '<p class="sub">导出当前浏览器中的全部用户数据（不含官方菜谱库）或从 JSON 文件恢复</p></div>' +
+          '<p class="sub">' + (isOwner ? '导出、导入或重置站点数据' : '导出当前站点数据为 JSON 文件') + '</p></div>' +
         '<div class="card" style="max-width:680px;margin-bottom:20px">' +
           '<h3 style="font-size:16px;margin-bottom:8px">导出数据</h3>' +
           '<p class="sub" style="margin-bottom:14px">将用户、邀请码、本地菜谱、公告、日志等全部数据导出为 JSON 文件。</p>' +
           '<button type="button" class="btn btn-primary" id="btn-export">导出 JSON</button></div>' +
-        '<div class="card" style="max-width:680px;margin-bottom:20px">' +
-          '<h3 style="font-size:16px;margin-bottom:8px">导入数据</h3>' +
-          '<p class="sub" style="margin-bottom:14px">选择之前导出的 JSON 文件覆盖当前数据。导入后需要重新登录。</p>' +
-          '<input type="file" id="file-import" accept="application/json,.json"></div>' +
-        '<div class="card" style="max-width:680px">' +
-          '<h3 style="font-size:16px;margin-bottom:8px">重置为初始数据</h3>' +
-          '<p class="sub" style="margin-bottom:14px">清空全部本地数据并恢复初始种子状态。</p>' +
-          '<button type="button" class="btn btn-danger" id="btn-reset">重置全部数据</button></div>';
+        (isOwner
+          ? '<div class="card" style="max-width:680px;margin-bottom:20px">' +
+              '<h3 style="font-size:16px;margin-bottom:8px">导入数据</h3>' +
+              '<p class="sub" style="margin-bottom:14px">选择之前导出的 JSON 文件覆盖当前数据。导入后需要重新登录。</p>' +
+              '<input type="file" id="file-import" accept="application/json,.json"></div>' +
+            '<div class="card danger-zone" style="max-width:680px">' +
+              '<h3 style="font-size:16px;margin-bottom:8px">重置为初始数据</h3>' +
+              '<p class="sub" style="margin-bottom:14px">清空全部本地数据并恢复初始种子状态。</p>' +
+              '<button type="button" class="btn btn-danger" id="btn-reset">重置全部数据</button></div>'
+          : '');
 
       main.querySelector('#btn-export').addEventListener('click', function () {
         var text = RM.Store.exportJSON();
@@ -1108,7 +1215,8 @@
         RM.toast('已导出数据文件', 'ok');
       });
 
-      main.querySelector('#file-import').addEventListener('change', async function (e) {
+      var importEl = main.querySelector('#file-import');
+      if (importEl) importEl.addEventListener('change', async function (e) {
         var file = e.target.files && e.target.files[0];
         if (!file) return;
         var text;
@@ -1120,12 +1228,12 @@
         });
         if (!confirmed) { e.target.value = ''; return; }
         var pw = await RM.prompt({
-          title: '验证管理员密码', label: '导入数据需要验证管理员密码',
-          type: 'password', placeholder: '请输入管理员密码', confirmText: '验证并导入'
+          title: '验证密码', label: '导入数据需要验证你当前的登录密码',
+          type: 'password', placeholder: '请输入当前登录密码', confirmText: '验证并导入'
         });
         if (pw == null) { e.target.value = ''; return; }
-        var okPw = await RM.Auth.verifyAdminPassword(pw);
-        if (!okPw) { RM.toast('管理员密码不正确', 'error'); e.target.value = ''; return; }
+        var okPw = await RM.Auth.verifyCurrentPassword(pw);
+        if (!okPw) { RM.toast('密码不正确', 'error'); e.target.value = ''; return; }
         var res = await RM.Store.importJSON(text);
         if (!res.ok) { RM.toast(res.msg, 'error'); e.target.value = ''; return; }
         RM.Store.clearSession();
@@ -1133,30 +1241,35 @@
         setTimeout(function () { window.location.hash = '#/login'; }, 800);
       });
 
-      main.querySelector('#btn-reset').addEventListener('click', async function () {
-        var confirmed = await RM.confirm({
-          title: '重置全部数据', message: '确定要清空全部数据并恢复初始状态吗？此操作不可恢复。',
-          confirmText: '继续', danger: true
-        });
-        if (!confirmed) return;
-        var pw = await RM.prompt({
-          title: '验证管理员密码', label: '重置数据需要验证管理员密码',
-          type: 'password', placeholder: '请输入管理员密码', confirmText: '验证并重置'
-        });
-        if (pw == null) return;
-        var okPw = await RM.Auth.verifyAdminPassword(pw);
-        if (!okPw) { RM.toast('管理员密码不正确', 'error'); return; }
-        await RM.Store.resetAll();
-        RM.Store.clearSession();
-        RM.toast('数据已重置，请重新登录', 'ok');
-        setTimeout(function () { window.location.hash = '#/login'; }, 800);
+      var resetBtn = main.querySelector('#btn-reset');
+      if (resetBtn) resetBtn.addEventListener('click', function () { RM.Admin.actionResetAll(); });
+    },
+
+    /* 站长专属：重置全部站点数据 */
+    actionResetAll: async function () {
+      var me = RM.Store.currentUser();
+      if (!RM.Perm.can(me, 'backup.reset')) { RM.toast('仅站长可重置站点数据', 'error'); return; }
+      var confirmed = await RM.confirm({
+        title: '重置全部数据', message: '确定要清空全部数据并恢复初始状态吗？此操作不可恢复。',
+        confirmText: '继续', danger: true
       });
+      if (!confirmed) return;
+      var pw = await RM.prompt({
+        title: '验证密码', label: '重置数据需要验证你当前的登录密码',
+        type: 'password', placeholder: '请输入当前登录密码', confirmText: '验证并重置'
+      });
+      if (pw == null) return;
+      var okPw = await RM.Auth.verifyCurrentPassword(pw);
+      if (!okPw) { RM.toast('密码不正确', 'error'); return; }
+      await RM.Store.resetAll();
+      RM.Store.clearSession();
+      RM.toast('数据已重置，请重新登录', 'ok');
+      setTimeout(function () { window.location.hash = '#/login'; }, 800);
     },
 
     renderPassword: function (main) {
       main.innerHTML =
-        '<div class="page-head"><h2>修改密码</h2>' +
-          '<p class="sub">系统管理员用户名为「小鲨鱼」，固定不可更改；UID 为系统内部保留。</p></div>' +
+        '<div class="page-head"><h2>修改密码</h2></div>' +
         '<form class="card" id="pwd-form" style="max-width:520px">' +
           '<label class="field"><span>当前密码</span>' +
             '<input type="password" id="pwd-old" autocomplete="current-password" placeholder="请输入当前密码"></label>' +
@@ -1166,9 +1279,7 @@
             '<input type="password" id="pwd-new2" autocomplete="new-password" placeholder="请再次输入新密码"></label>' +
           '<div class="form-msg" id="pwd-msg"></div>' +
           '<button type="submit" class="btn btn-primary">保存新密码</button>' +
-        '</form>' +
-        '<div class="notice notice-info" style="margin-top:20px;max-width:520px">' +
-          '密码以哈希形式保存在本机浏览器；请定期更换，不要使用与其他网站相同的密码。</div>';
+        '</form>';
 
       var form = main.querySelector('#pwd-form');
       var msg = main.querySelector('#pwd-msg');
@@ -1181,15 +1292,249 @@
         if (!oldPw) { msg.textContent = '请输入当前密码'; msg.className = 'form-msg error'; return; }
         if (!newPw) { msg.textContent = '请输入新密码'; msg.className = 'form-msg error'; return; }
         if (newPw !== newPw2) { msg.textContent = '两次输入的新密码不一致'; msg.className = 'form-msg error'; return; }
-        var res = await RM.Auth.changeAdminPassword(oldPw, newPw);
+        var res = await RM.Auth.changePassword(oldPw, newPw);
         if (!res.ok) { msg.textContent = res.msg; msg.className = 'form-msg error'; return; }
-        RM.Store.addLog('修改管理员密码', '小鲨鱼', '');
+        var me = RM.Store.currentUser();
+        RM.Store.addLog('修改密码', me ? me.username : '', '');
         msg.textContent = res.msg; msg.className = 'form-msg ok';
         main.querySelector('#pwd-old').value = '';
         main.querySelector('#pwd-new').value = '';
         main.querySelector('#pwd-new2').value = '';
-        RM.toast('管理员密码已更新', 'ok');
+        RM.toast('密码已更新', 'ok');
       });
+    },
+
+    /* ============================================================
+     * 站长专区（仅站长可见）：角色审核 / 角色治理 / 危险操作 / 站长身份
+     * ============================================================ */
+    renderOwnerZone: function (main) {
+      var self = this;
+      var me = RM.Store.currentUser();
+      if (!RM.Perm.isOwner(me)) { main.innerHTML = '<div class="empty">仅站长可访问本页</div>'; return; }
+
+      var reqs = RM.Store.pendingRoleRequests();
+      var owners = RM.Store.db.users.filter(function (u) { return u.role === 'owner'; });
+      var admins = RM.Store.db.users.filter(function (u) { return u.role === 'admin'; });
+      var promotable = RM.Store.db.users.filter(function (u) {
+        return u.role === 'user' && !u.guest && u.status === 'active' && !RM.Store.hasPendingRoleRequest(u.uid);
+      });
+
+      main.innerHTML =
+        '<div class="page-head"><h2>👑 站长专区</h2>' +
+          '<p class="sub">站长拥有站点全部权限：审核角色申请、治理管理员、执行敏感操作</p></div>' +
+
+        '<div class="card" style="margin-bottom:20px">' +
+          '<h3 style="font-size:16px;margin-bottom:6px">待审核角色申请' +
+            (reqs.length ? ' <span class="badge badge-warn">' + reqs.length + '</span>' : '') + '</h3>' +
+          '<div id="role-req-list"></div>' +
+        '</div>' +
+
+        '<div class="card" style="margin-bottom:20px">' +
+          '<h3 style="font-size:16px;margin-bottom:6px">管理员治理</h3>' +
+          '<div id="owner-admin-list"></div>' +
+        '</div>' +
+
+        '<div class="card" style="margin-bottom:20px">' +
+          '<h3 style="font-size:16px;margin-bottom:6px">角色授予</h3>' +
+          '<p class="sub" style="margin-bottom:12px">直接指定某位用户的角色。管理员无法提升或降级其他管理员。</p>' +
+          '<div id="owner-grant-list"></div>' +
+        '</div>' +
+
+        '<div class="card danger-zone" style="margin-bottom:20px">' +
+          '<h3 style="font-size:16px;margin-bottom:12px">危险操作区</h3>' +
+          '<div class="danger-actions">' +
+            '<button type="button" class="btn btn-sm btn-warn" data-danger="logs">清空操作日志</button>' +
+            '<button type="button" class="btn btn-sm btn-danger" data-danger="users">仅清空用户数据</button>' +
+            '<button type="button" class="btn btn-sm btn-danger" id="owner-reset">重置全部数据</button>' +
+            '<button type="button" class="btn btn-sm btn-danger" id="owner-import">导入数据覆盖</button>' +
+          '</div>' +
+        '</div>' +
+
+        '<div class="card">' +
+          '<h3 style="font-size:16px;margin-bottom:6px">站长身份</h3>' +
+          '<div id="owner-info"></div>' +
+        '</div>';
+
+      /* --- 待审核申请 --- */
+      var reqHost = main.querySelector('#role-req-list');
+      if (!reqs.length) {
+        reqHost.innerHTML = '<div class="empty">暂无待审核的申请</div>';
+      } else {
+        reqHost.innerHTML = reqs.map(function (r) {
+          return '<div class="row-card" data-req="' + RM.escapeHtml(r.id) + '">' +
+            '<div class="row-main"><div class="row-title">' + RM.escapeHtml(r.targetName) +
+              ' <span class="badge badge-primary">申请升为管理员</span></div>' +
+              '<div class="row-sub">' +
+                (r.reason ? '理由：' + RM.escapeHtml(r.reason) + ' · ' : '') +
+                '申请人：' + RM.escapeHtml(r.requestedByName || '—') +
+                ' · ' + new Date(r.createdAt).toLocaleString() + '</div></div>' +
+            '<div class="row-actions">' +
+              '<button type="button" class="btn btn-sm btn-ok" data-act="approve">批准</button>' +
+              '<button type="button" class="btn btn-sm btn-danger" data-act="reject">驳回</button>' +
+            '</div></div>';
+        }).join('');
+      }
+
+      reqHost.addEventListener('click', function (e) {
+        var btn = e.target.closest('button[data-act]');
+        if (!btn) return;
+        var card = btn.closest('[data-req]');
+        var req = RM.Store.getRoleRequest(card.getAttribute('data-req'));
+        if (!req) return;
+        self.actionReviewRoleRequest(req, btn.getAttribute('data-act') === 'approve');
+      });
+
+      /* --- 管理员治理 --- */
+      var adminHost = main.querySelector('#owner-admin-list');
+      var otherAdmins = admins.filter(function (u) { return u.uid !== me.uid; });
+      if (!otherAdmins.length) {
+        adminHost.innerHTML = '<div class="empty">暂无其他管理员</div>';
+      } else {
+        adminHost.innerHTML = otherAdmins.map(function (u) {
+          return '<div class="row-card" data-uid="' + RM.escapeHtml(u.uid) + '">' +
+            '<div class="row-main"><div class="row-title">' + RM.escapeHtml(u.username) +
+              ' <span class="badge">UID ' + RM.escapeHtml(u.uid) + '</span>' +
+              (u.status === 'active' ? ' <span class="badge badge-ok">正常</span>'
+                                     : ' <span class="badge">已禁用</span>') + '</div></div>' +
+            '<div class="row-actions">' +
+              '<button type="button" class="btn btn-sm btn-ghost" data-act="demote">降为普通用户</button>' +
+              '<button type="button" class="btn btn-sm btn-danger" data-act="delete">删除</button>' +
+            '</div></div>';
+        }).join('');
+      }
+
+      adminHost.addEventListener('click', function (e) {
+        var btn = e.target.closest('button[data-act]');
+        if (!btn) return;
+        var card = btn.closest('[data-uid]');
+        var u = RM.Store.getUserByUid(card.getAttribute('data-uid'));
+        if (!u) return;
+        if (btn.getAttribute('data-act') === 'demote') self.actionSetRole(u, 'user');
+        else self.actionDeleteUser(u);
+      });
+
+      /* --- 角色授予 --- */
+      var grantHost = main.querySelector('#owner-grant-list');
+      if (!promotable.length) {
+        grantHost.innerHTML = '<div class="empty">暂无可提升的普通用户</div>';
+      } else {
+        grantHost.innerHTML = promotable.map(function (u) {
+          return '<div class="row-card" data-uid="' + RM.escapeHtml(u.uid) + '">' +
+            '<div class="row-main"><div class="row-title">' + RM.escapeHtml(u.username) +
+              ' <span class="badge">UID ' + RM.escapeHtml(u.uid) + '</span></div></div>' +
+            '<div class="row-actions">' +
+              '<button type="button" class="btn btn-sm btn-primary" data-act="promote">升为管理员</button>' +
+            '</div></div>';
+        }).join('');
+      }
+
+      grantHost.addEventListener('click', function (e) {
+        var btn = e.target.closest('button[data-act="promote"]');
+        if (!btn) return;
+        var card = btn.closest('[data-uid]');
+        var u = RM.Store.getUserByUid(card.getAttribute('data-uid'));
+        if (u) self.actionSetRole(u, 'admin');
+      });
+
+      /* --- 危险操作 --- */
+      main.querySelectorAll('[data-danger]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var k = b.getAttribute('data-danger');
+          if (k === 'logs') self.actionClearLogs();
+          else if (k === 'users') self.actionClearUserData();
+        });
+      });
+      main.querySelector('#owner-reset').addEventListener('click', function () { self.actionResetAll(); });
+      main.querySelector('#owner-import').addEventListener('click', function () {
+        window.location.hash = '#/admin/backup';
+        RM.toast('请在备份页选择 JSON 文件导入');
+      });
+
+      /* --- 站长身份 --- */
+      var owner = owners[0];
+      main.querySelector('#owner-info').innerHTML = owner
+        ? '<div class="row-card" style="box-shadow:none;padding:0">' +
+            '<div class="row-main"><div class="row-title">' + RM.escapeHtml(owner.username) +
+              ' <span class="badge badge-owner">👑 站长</span></div>' +
+              '<div class="row-sub">UID ' + RM.escapeHtml(owner.uid) +
+                ' · 注册于 ' + new Date(owner.createdAt).toLocaleString() + '</div></div>' +
+            '<div class="row-actions">' +
+              '<button type="button" class="btn btn-sm btn-ghost" id="owner-transfer">移交站长</button>' +
+            '</div></div>'
+        : '<div class="empty">未找到站长账户</div>';
+
+      var trBtn = main.querySelector('#owner-transfer');
+      if (trBtn) trBtn.addEventListener('click', function () { self.actionTransferOwner(); });
+    },
+
+    /* 仅清空用户数据（保留菜谱 / 公告 / 站点设置 / 日志） */
+    actionClearUserData: async function () {
+      var me = RM.Store.currentUser();
+      if (!RM.Perm.can(me, 'data.clearUsers')) { RM.toast('仅站长可清空用户数据', 'error'); return; }
+      var ok = await RM.confirm({
+        title: '仅清空用户数据',
+        message: '将删除除站长外的全部账户（含管理员、游客）以及邀请码、角色申请。菜谱、公告与站点设置会保留。确定继续吗？',
+        confirmText: '继续', danger: true
+      });
+      if (!ok) return;
+      var pw = await RM.prompt({
+        title: '验证密码', label: '清空用户数据需要验证你当前的登录密码',
+        type: 'password', placeholder: '请输入当前登录密码', confirmText: '验证并清空'
+      });
+      if (pw == null) return;
+      var okPw = await RM.Auth.verifyCurrentPassword(pw);
+      if (!okPw) { RM.toast('密码不正确', 'error'); return; }
+      var removed = RM.Store.clearUserData();
+      RM.Store.addLog('清空用户数据', '', '删除 ' + removed + ' 个账户');
+      RM.Store.save();
+      RM.toast('已清空 ' + removed + ' 个账户', 'ok');
+      RM.rerender();
+    },
+
+    /* 移交站长：原站长降为管理员，对方升为站长 */
+    actionTransferOwner: async function () {
+      var me = RM.Store.currentUser();
+      if (!RM.Perm.can(me, 'owner.transfer')) { RM.toast('仅站长可移交站长身份', 'error'); return; }
+
+      var val = await RM.prompt({
+        title: '移交站长',
+        label: '输入新站长的用户名或 UID（移交后你将变为管理员）',
+        placeholder: '用户名或 6 位 UID',
+        validate: function (v) {
+          var t = RM.Store.findUserByLogin(v);
+          if (!t) return '找不到该账户';
+          if (t.uid === me.uid) return '不能移交给自己';
+          if (t.status !== 'active') return '该账户不是启用状态';
+          if (t.guest) return '游客账户不能成为站长';
+          return null;
+        }
+      });
+      if (val == null) return;
+
+      var target = RM.Store.findUserByLogin(val);
+      if (!target) return;
+
+      var ok = await RM.confirm({
+        title: '移交站长',
+        message: '确定把站长身份移交给「' + target.username + '」吗？你的账户将降为管理员。',
+        confirmText: '确认移交', danger: true
+      });
+      if (!ok) return;
+
+      var pw = await RM.prompt({
+        title: '验证密码', label: '移交站长需要验证你当前的登录密码',
+        type: 'password', placeholder: '请输入当前登录密码', confirmText: '验证并移交'
+      });
+      if (pw == null) return;
+      var okPw = await RM.Auth.verifyCurrentPassword(pw);
+      if (!okPw) { RM.toast('密码不正确', 'error'); return; }
+
+      me.role = 'admin';
+      target.role = 'owner';
+      RM.Store.addLog('移交站长', target.username, me.username + ' → ' + target.username);
+      RM.Store.save();
+      RM.toast('站长身份已移交给 ' + target.username, 'ok');
+      RM.rerender();
     }
   };
 })(window);

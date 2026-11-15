@@ -15,6 +15,9 @@
   var ADMIN_NAME = '小鲨鱼';
   var ADMIN_DEFAULT_PASSWORD = 'xyy1314@';
 
+  /* 角色定义见 utils.js 的 RM.ROLE：owner 站长 > admin 管理员 > user 普通用户 / guest 游客 */
+  var ROLE = RM.ROLE;
+
   function todayKey() {
     var d = new Date();
     return d.getFullYear() + '-' +
@@ -112,7 +115,7 @@
       if (this.db._resetAdminPassword) {
         admin.username = ADMIN_NAME;
         admin.usernameLower = ADMIN_NAME.toLowerCase();
-        admin.role = 'admin';
+        admin.role = ROLE.OWNER;
         admin.status = 'active';
         admin.passHash = await hashPassword(ADMIN_DEFAULT_PASSWORD);
         admin.ban = { mode: 'none' };
@@ -121,7 +124,7 @@
         delete this.db._resetAdminPassword;
         changed = true;
       } else {
-        if (admin.role !== 'admin') { admin.role = 'admin'; changed = true; }
+        if (admin.role !== ROLE.OWNER) { admin.role = ROLE.OWNER; changed = true; }
         if (!admin.username) {
           admin.username = ADMIN_NAME;
           admin.usernameLower = ADMIN_NAME.toLowerCase();
@@ -238,7 +241,13 @@
         db._resetAdminPassword = true;
       }
 
-      db.version = 6;
+      // v7：新增角色变更申请队列，并把系统账户（UID 000000）升级为站长
+      if (!Array.isArray(db.roleRequests)) db.roleRequests = [];
+      db.users.forEach(function (u) {
+        if (u.uid === ADMIN_UID && u.role !== ROLE.OWNER) u.role = ROLE.OWNER;
+      });
+
+      db.version = 7;
     },
 
     /* 种子：管理员 小鲨鱼 / xyy1314@ + 3 道示例菜谱 */
@@ -247,11 +256,11 @@
       var adminHash = await hashPassword(ADMIN_DEFAULT_PASSWORD);
 
       this.db = {
-        version: 6,
+        version: 7,
         users: [
           {
             uid: ADMIN_UID, username: ADMIN_NAME, usernameLower: ADMIN_NAME.toLowerCase(),
-            passHash: adminHash, role: 'admin', status: 'active', createdAt: now,
+            passHash: adminHash, role: ROLE.OWNER, status: 'active', createdAt: now,
             ban: { mode: 'none' }, freeze: { mode: 'none' },
             guest: false, guestExpireAt: null,
             history: [], favorites: [], playlists: [],
@@ -286,7 +295,7 @@
             notes: '', views: 0, addedAt: now - 2000
           }
         ],
-        logs: [], announcements: [],
+        logs: [], announcements: [], roleRequests: [],
         settings: { accent: 'blue' },
         viewStats: {},
         meta: { createdAt: now }
@@ -439,6 +448,58 @@
       await this.init();
     },
 
+    /* 仅清空用户数据：删除除站长外的全部账户、邀请码与角色申请，保留菜谱/公告/设置/日志 */
+    clearUserData: function () {
+      var keepUid = ADMIN_UID;
+      var me = this.currentUser();
+      if (me && me.role === ROLE.OWNER) keepUid = me.uid;
+      var before = this.db.users.length;
+      this.db.users = this.db.users.filter(function (u) { return u.uid === keepUid; });
+      this.db.invites = [];
+      this.db.roleRequests = [];
+      var removed = before - this.db.users.length;
+      this.save();
+      return removed;
+    },
+
+    /* ---------- 角色变更申请（管理员提交，站长审核） ---------- */
+    pendingRoleRequests: function () {
+      return (this.db.roleRequests || []).filter(function (r) { return r.status === 'pending'; });
+    },
+    hasPendingRoleRequest: function (targetUid) {
+      return this.pendingRoleRequests().some(function (r) { return r.targetUid === targetUid; });
+    },
+    addRoleRequest: function (targetUid, reason) {
+      var target = this.getUserByUid(targetUid);
+      if (!target) return { ok: false, msg: '目标用户不存在' };
+      if (target.role === ROLE.ADMIN || target.role === ROLE.OWNER) {
+        return { ok: false, msg: '该用户已经是后台账户' };
+      }
+      if (this.hasPendingRoleRequest(targetUid)) {
+        return { ok: false, msg: '该用户已有待站长审核的申请' };
+      }
+      var me = this.currentUser();
+      if (!Array.isArray(this.db.roleRequests)) this.db.roleRequests = [];
+      var req = {
+        id: RM.uid('role'), type: 'promote',
+        targetUid: target.uid, targetName: target.username,
+        requestedBy: me ? me.uid : '', requestedByName: me ? me.username : '系统',
+        reason: String(reason == null ? '' : reason).trim().slice(0, 100),
+        createdAt: Date.now(), status: 'pending',
+        reviewedAt: 0, reviewedBy: ''
+      };
+      this.db.roleRequests.unshift(req);
+      this.save();
+      return { ok: true, request: req };
+    },
+    getRoleRequest: function (id) {
+      var list = this.db.roleRequests || [];
+      for (var i = 0; i < list.length; i++) {
+        if (list[i].id === id) return list[i];
+      }
+      return null;
+    },
+
     addLog: function (action, target, detail) {
       if (!this.db) return;
       var u = this.currentUser();
@@ -566,7 +627,9 @@
       if (!t) return { ok: false, msg: '通知标题不能为空' };
       if (!c) return { ok: false, msg: '通知内容不能为空' };
       var targets = targetUid ? [this.getUserByUid(targetUid)].filter(Boolean)
-                              : this.db.users.filter(function (u) { return u.role !== 'admin'; });
+                              : this.db.users.filter(function (u) {
+                                  return u.role !== ROLE.ADMIN && u.role !== ROLE.OWNER;
+                                });
       if (!targets.length) return { ok: false, msg: '没有可发送的目标用户' };
       targets.forEach(function (u) {
         if (!Array.isArray(u.notifications)) u.notifications = [];

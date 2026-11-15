@@ -103,10 +103,10 @@
         return;
       }
       if (isAuthPage) {
-        window.location.hash = user.role === 'admin' ? '#/admin/dashboard' : '#/app/workbench';
+        window.location.hash = RM.Perm.isAdmin(user) ? '#/admin/dashboard' : '#/app/workbench';
         return;
       }
-      if (user.role === 'admin') {
+      if (RM.Perm.isAdmin(user)) {
         if (path.indexOf('/admin') !== 0) { window.location.hash = '#/admin/dashboard'; return; }
         RM.Admin.render(path); didRender = true;
       } else {
@@ -134,8 +134,6 @@
         '<div class="auth-card">' +
           '<div class="auth-logo"><img src="ict.jpg" alt="logo"></div>' + 
           '<h1>小鲨鱼菜谱</h1>' +
-          '<p class="auth-sub">       </p>' +
-          '<p class="auth-note">      </p>' +
           '<form id="login-form" novalidate>' +
             '<label class="field"><span>用户名 / UID</span>' +
               '<input type="text" id="login-id" autocomplete="username" placeholder="请输入用户名或 UID"></label>' +
@@ -166,7 +164,7 @@
       if (!res.ok) { msg.textContent = res.msg; msg.className = 'form-msg error'; return; }
 
       RM.toast('欢迎回来，' + res.user.username, 'ok');
-      window.location.hash = res.user.role === 'admin' ? '#/admin/dashboard' : '#/app/workbench';
+      window.location.hash = RM.Perm.isAdmin(res.user) ? '#/admin/dashboard' : '#/app/workbench';
     });
   }
 
@@ -190,7 +188,6 @@
             '<button type="submit" class="btn btn-primary btn-block">注 册</button>' +
           '</form>' +
           '<div class="auth-foot">已有账户？<a href="#/login">去登录</a></div>' +
-          '<div class="auth-note">密码仅以哈希形式保存在本机浏览器，不会上传到服务器。</div>' +
           '<div class="auth-tip">普通注册需要管理员审批通过后才能登录。</div>' +
         '</div>' +
       '</div>';

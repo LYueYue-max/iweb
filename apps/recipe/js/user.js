@@ -20,11 +20,7 @@
       ]
     },
     {
-      type: 'group', key: 'settings', icon: '⚙️', label: '设置与信息',
-      items: [
-        { path: '/app/profile', label: '个人资料' },
-        { path: '/app/about', label: '关于' }
-      ]
+      type: 'link', path: '/app/profile', icon: '⚙️', label: '个人资料'
     }
   ];
 
@@ -85,7 +81,6 @@
       if (path === '/app/profile') this.renderProfile(main, user);
       else if (path === '/app/favorites') this.renderFavorites(main, user);
       else if (path === '/app/playlists') this.renderPlaylists(main, user);
-      else if (path === '/app/about') this.renderAbout(main);
       else if (path === '/app/library') this.renderLibrary(main, user);
       else this.renderWorkbench(main, user);
     },
@@ -694,20 +689,18 @@
       var plCount = (user.playlists || []).length;
       var hisCount = (user.history || []).length;
       var isSystemAdmin = user.uid === '000000';
+      var roleText = user.role === 'owner' ? '👑 站长'
+        : (user.role === 'admin' ? '管理员' : (user.guest ? '游客' : '普通用户'));
 
       main.innerHTML =
-        '<div class="page-head">' +
-          '<h2>个人资料</h2>' +
-          '<p class="sub">' + (isSystemAdmin
-            ? '系统管理员用户名固定为「小鲨鱼」，不可修改；UID 由系统分配'
-            : '可以修改自己的用户名，UID 由系统分配不可修改') + '</p>' +
-        '</div>' +
+        '<div class="page-head"><h2>个人资料</h2></div>' +
         '<div class="card" style="max-width:560px;margin-bottom:20px">' +
           '<div class="row-card" style="box-shadow:none;padding:0 0 16px;margin-bottom:16px;border-bottom:1px solid var(--line)">' +
             '<div class="row-main">' +
               '<div class="row-title">当前用户名：' + RM.escapeHtml(user.username) + '</div>' +
               '<div class="row-sub">UID：' + RM.escapeHtml(user.uid) +
                 (user.guest ? ' · 游客账户' : '') + '</div>' +
+              '<div class="row-sub">角色：' + roleText + '</div>' +
               '<div class="row-sub">收藏 ' + favCount + ' 道 · 菜单 ' + plCount +
                 ' 个 · 最近查看 ' + hisCount + ' 道</div>' +
             '</div>' +
@@ -728,7 +721,7 @@
       form.addEventListener('submit', function (e) {
         e.preventDefault();
         if (isSystemAdmin) {
-          msg.textContent = '系统管理员用户名固定为「小鲨鱼」，不可修改';
+          msg.textContent = '站长账户的用户名固定为「小鲨鱼」，不可修改';
           msg.className = 'form-msg error'; return;
         }
         var name = main.querySelector('#profile-name').value.trim();
@@ -744,45 +737,6 @@
         msg.textContent = '用户名已更新'; msg.className = 'form-msg ok';
         RM.toast('用户名已更新', 'ok'); RM.rerender();
       });
-    },
-
-    renderAbout: function (main) {
-      main.innerHTML =
-        '<div class="page-head">' +
-          '<h2>关于</h2>' +
-        '</div>' +
-        '<div class="card" style="max-width:720px;margin-bottom:20px">' +
-          '<h3 style="font-size:16px;margin-bottom:10px">覆盖范围</h3>' +
-          '<p class="sub" style="line-height:1.9">' +
-            '本网站通过「种子菜谱 + 菜系规则 + 味型模板 + 技法模板 + 食材同义词 + 替代规则」' +
-            '覆盖全球主流家常菜谱类型，包括中国菜、日韩菜、东南亚菜、南亚菜、中东菜、' +
-            '地中海菜、欧洲菜、美洲菜、非洲代表菜。<b>不承诺精确覆盖全球 80% 菜谱</b>，' +
-            '仅提供类型覆盖与持续扩展能力。' +
-          '</p>' +
-        '</div>' +
-        '<div class="card" style="max-width:720px;margin-bottom:20px">' +
-          '<h3 style="font-size:16px;margin-bottom:10px">数据存储</h3>' +
-          '<p class="sub" style="line-height:1.9">' +
-            '所有用户数据（账号、收藏、菜单、历史、偏好）仅保存在当前浏览器的 localStorage 中。' +
-            '官方菜谱库以 JSON 文件形式随站点托管在 <code>data/</code> 目录下，' +
-            '按菜系分片加载' +
-          '</p>' +
-        '</div>' +
-        '<div class="card" style="max-width:720px;margin-bottom:20px">' +
-          '<h3 style="font-size:16px;margin-bottom:10px">安全说明</h3>' +
-          '<p class="sub" style="line-height:1.9">' +
-            '密码使用 Web Crypto API（SHA-256 + 固定盐）哈希存储，不以明文保存；' +
-            '但纯前端版本的数据可被本地访问者查看或修改，不适合真正的多用户生产环境。' +
-            '初始账户信息请查看部署说明；首次登录后请立即修改密码。' +
-          '</p>' +
-        '</div>' +
-        '<div class="card" style="max-width:720px">' +
-          '<h3 style="font-size:16px;margin-bottom:10px">免责声明</h3>' +
-          '<p class="sub" style="line-height:1.9">' +
-            '菜谱为示例数据，供参考。请结合实际食材安全烹饪，注意过敏原（坚果、海鲜等）。' +
-            '本站不承担因使用菜谱导致的任何责任。' +
-          '</p>' +
-        '</div>';
     }
   };
 

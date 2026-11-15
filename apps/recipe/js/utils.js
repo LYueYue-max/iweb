@@ -26,6 +26,54 @@
     return s;
   };
 
+  /* ---------------- 角色与权限 ----------------
+   * 站长（owner）> 管理员（admin）> 普通用户（user）/ 游客（guest）
+   * 站长拥有站点全部权限，可管理管理员、清空站点数据；管理员看不到敏感操作界面。
+   */
+  RM.ROLE = {
+    OWNER: 'owner',
+    ADMIN: 'admin',
+    USER: 'user',
+    GUEST: 'guest'
+  };
+
+  RM.Perm = {
+    isOwner: function (u) { return !!u && u.role === RM.ROLE.OWNER; },
+    isAdmin: function (u) { return !!u && (u.role === RM.ROLE.ADMIN || u.role === RM.ROLE.OWNER); },
+    isSystemOwner: function (u) { return !!u && u.uid === '000000'; },
+
+    /* 动作 → 允许的角色 */
+    ACTIONS: {
+      'users.view': ['owner', 'admin'],
+      'users.manage': ['owner', 'admin'],        /* 普通用户：改名 / 改密 / 禁用 / 删除 */
+      'users.manageAdmin': ['owner'],            /* 管理员：改名 / 改密 / 禁用 / 降级 / 删除 */
+      'role.promote': ['owner'],                 /* 直接升为管理员 */
+      'role.request': ['owner', 'admin'],        /* 管理员提交升级申请 */
+      'role.review': ['owner'],                  /* 站长审核升级申请 */
+      'owner.transfer': ['owner'],               /* 移交站长 */
+      'logs.clear': ['owner'],
+      'backup.import': ['owner'],
+      'backup.reset': ['owner'],
+      'data.clearUsers': ['owner']
+    },
+
+    can: function (user, action) {
+      if (!user) return false;
+      var allowed = this.ACTIONS[action];
+      if (!allowed) return false;
+      return allowed.indexOf(user.role) !== -1;
+    },
+
+    /* 当前操作者能否管理（改名/禁用/删除等）该目标账户 */
+    canManage: function (operator, target) {
+      if (!operator || !target) return false;
+      if (operator.uid === target.uid) return false;      /* 不能操作自己 */
+      if (target.role === RM.ROLE.OWNER) return false;    /* 站长账户不可被任何人操作 */
+      if (target.role === RM.ROLE.ADMIN) return this.can(operator, 'users.manageAdmin');
+      return this.can(operator, 'users.manage');
+    }
+  };
+
   RM.escapeHtml = function (str) {
     return String(str == null ? '' : str).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];

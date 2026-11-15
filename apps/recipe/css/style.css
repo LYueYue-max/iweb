@@ -168,6 +168,8 @@ body[data-theme="dark"] .badge { background: #2a313c; }
 .badge-warn { background: var(--warn-soft); color: #b57a1e; }
 .badge-danger { background: var(--danger-soft); color: #c94a4a; }
 .badge-mint { background: var(--mint-soft); color: #2b8f79; }
+.badge-owner { background: linear-gradient(135deg, #fdf3d7, #f6e0a8); color: #96681a; border: 1px solid rgba(196, 150, 40, .28); }
+body[data-theme="dark"] .badge-owner { background: linear-gradient(135deg, #4a3a17, #3a2c10); color: #f2cc72; border-color: rgba(240, 201, 106, .28); }
 .sub { color: var(--text-2); font-size: 13.5px; }
 
 .card { background: var(--card); border-radius: var(--r-lg); padding: 22px; box-shadow: var(--shadow-sm); transition: background-color .35s ease, box-shadow .2s ease; }
@@ -230,6 +232,13 @@ body[data-theme="dark"] .topbar { background: rgba(26, 31, 39, .78); }
 .stat-value.mint { color: #2b8f79; }
 .stat-value.warn { color: #b57a1e; }
 .stat-value.danger { color: #c94a4a; }
+.stat-value.gold { color: #b8860b; }
+body[data-theme="dark"] .stat-value.gold { color: #f0c96a; }
+
+/* 站长专区：危险操作区 */
+.danger-zone { border: 1px solid var(--danger-soft); box-shadow: 0 0 0 1px rgba(236, 106, 106, .35), var(--shadow-sm); }
+.danger-zone > h3 { color: #c94a4a; }
+.danger-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 
 /* 列表行卡片 */
 .row-card { background: var(--card); border-radius: var(--r-lg); padding: 18px 22px; box-shadow: var(--shadow-sm); display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; transition: box-shadow .22s ease, transform .22s var(--ease-out); }
